@@ -155,6 +155,28 @@ a.topic-line:hover { background: var(--accent-soft); }
 .ocrpages img { display: block; width: 100%; }
 @media (max-width: 700px) { .ocrgrid { grid-template-columns: 1fr; } .ocrpages { max-height: 320px; } }
 progress { width: 100%; }
+
+/* daily review, timetable, timed papers, progress */
+.weekdots { display: flex; gap: 6px; }
+.weekdots span { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; background: var(--line); color: var(--muted); }
+.weekdots span.on { background: var(--good); color: #fff; }
+.plan-day { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin: 8px 0; }
+.plan-day.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.plan-date { font-weight: 600; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.plan-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.plan-item:first-of-type { border-top: 0; }
+.plan-item.done { opacity: .6; }
+.plan-item.missed > span { color: var(--muted); }
+.plan-item .btn { padding: 4px 12px; font-size: .9rem; white-space: nowrap; }
+.plan-exam { margin: 6px 0; }
+.plan-exam input { max-width: 190px; }
+details.card > summary { cursor: pointer; }
+.paperbar { position: sticky; top: 56px; z-index: 4; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+.paperbar .bad { color: var(--bad); font-weight: 700; background: none; }
+.grade-big { font-size: 2.2rem; font-weight: 800; line-height: 1; color: var(--accent); }
+.grade-big.ok { color: var(--good); }
+.tech-row.wide { grid-template-columns: minmax(0, 1fr) minmax(80px, 200px) 56px; }
 </style>
 </head>
 <body>
@@ -163,7 +185,10 @@ progress { width: 100%; }
     <nav>
       <a href="#/">Home</a>
       <a href="#/subjects">Subjects</a>
-      <a href="#/review">Review cards</a>
+      <a href="#/daily">Daily review</a>
+      <a href="#/review">Due</a>
+      <a href="#/plan">Timetable</a>
+      <a href="#/progress">Progress</a>
       <a href="#/coding">Coding</a>
       <a href="#/exam-technique">Exam technique</a>
       <a href="#/ask">Ask</a>
@@ -179,6 +204,8 @@ progress { width: 100%; }
   const KEY = "revisionHub.v1";
   const TECHNIQUES = ["flashcards", "quiz", "spaced", "summary", "blurt", "exam"];
   const C = window.CONTENT;
+  // Small per-user JSON stores: quiz questions to re-ask, timetable settings, timed papers, daily reviews.
+  const STORE_KEYS = ["qreview", "plan", "papers", "daily"];
 
   // Combined Science is the three sciences together (same as the server).
   const sci = ["biology", "chemistry", "physics"].map((s) => C.subjects[s]).filter(Boolean);
@@ -401,6 +428,16 @@ progress { width: 100%; }
     } else if (route === "PUT /api/sets") {
       u.sets = cleanSets(body.sets);
       result = { sets: u.sets };
+    } else if (route === "GET /api/attempts") {
+      return { attempts: u.attempts.filter((a) => a.kind === "subject").map(({ course, topic, technique, score, created }) => ({ course, topic, technique, score, created })) };
+    } else if ((m = route.match(/^GET \/api\/store\/(\w+)$/))) {
+      if (!STORE_KEYS.includes(m[1])) fail("Unknown store");
+      return { data: (u.store || {})[m[1]] ?? null };
+    } else if ((m = route.match(/^PUT \/api\/store\/(\w+)$/))) {
+      if (!STORE_KEYS.includes(m[1])) fail("Unknown store");
+      if (JSON.stringify(body.data ?? null).length > 300000) fail("That's too much to save.");
+      (u.store ||= {})[m[1]] = body.data ?? null;
+      result = { ok: true };
     } else if (route === "GET /api/cards/due") {
       return cardsDue(u);
     } else if (route === "POST /api/cards/review") {
@@ -426,7 +463,7 @@ const TECH = {
   blurt: { name: "Blurting", icon: "✍️", desc: "Write down everything you remember, then see what you missed." },
   exam: { name: "Exam question", icon: "📝", desc: "Answer a real-style exam question and mark it with the mark scheme." },
 };
-const S = { user: null, profile: null, cat: null, setup: null, pyodide: null };
+const S = { user: null, profile: null, cat: null, setup: null, pyodide: null, store: {} };
 const app = () => document.getElementById("app");
 
 // ------------------------------------------------------------------ helpers
@@ -668,7 +705,11 @@ async function route() {
       case "topic": return await renderTopic(parts[1], parts[2]);
       case "study": return await runStudy(parts[1], parts[2], parts[3]);
       case "set": return await renderSet(parts[1], parts[2], parts[3]);
-      case "review": return await renderReview();
+      case "review": return await renderReview(parts[1]);
+      case "daily": return await renderDaily();
+      case "plan": return await renderPlan();
+      case "paper": return await renderPaper(parts[1]);
+      case "progress": return await renderProgress();
       case "coding": return renderCoding();
       case "code": return parts[2] ? await renderLesson(parts[1], parts[2]) : await renderCourse(parts[1]);
       case "exam-technique": return await renderExamTechnique();
@@ -813,7 +854,7 @@ async function renderHome() {
         <span class="muted small">${esc(d.why)}</span></p>
         <button id="go-next">Start revising →</button>` : `<p>Tick some topics you've covered and the site will pick what to revise.</p><a class="btn" href="#/setup/1">Choose topics</a>`}
     </div>
-    ${d.cardsDue ? `<div class="card row spread"><span>📅 You have <strong>${d.cardsDue}</strong> flashcards due for review.</span><a class="btn primary" href="#/review">Review now</a></div>` : ""}
+    <div id="homeextra"></div>
     <div class="card">
       <h2>What works best for you</h2>
       <p class="muted small">${tried < TECHNIQUES_COUNT() ? `You've tried ${tried} of ${TECHNIQUES_COUNT()} techniques. Try each one a couple of times and this will show which suits you.` :
@@ -835,6 +876,7 @@ async function renderHome() {
       <strong>${c.icon} ${esc(c.name)}</strong><div class="small muted" style="margin:6px 0">${c.done}/${c.total} lessons</div>
       <div class="bar"><span style="width:${(c.done / c.total) * 100}%"></span></div></a>`).join("")}</div>` : ""}
   `);
+  homeExtra(d.cardsDue);
   if (next) $("#go-next").onclick = () => go(`#/study/${next.subject}/${encodeURIComponent(next.topic)}/${d.recommended}`);
 }
 function TECHNIQUES_COUNT() { return Object.keys(TECH).length; }
@@ -852,7 +894,8 @@ function renderSubjects() {
 async function renderSubject(id, tab = "topics") {
   const s = await getSubject(id), mine = mySubject(id);
   const board = mine?.board;
-  const tabs = [["topics", "Topics"], ["written", "✍️ Written and essays"], ["technique", "Exam technique"], ["board", "Exam board info"]];
+  const tabs = [["topics", "Topics"], ["written", "✍️ Written and essays"], ["paper", "⏱️ Timed paper"], ["technique", "Exam technique"], ["board", "Exam board info"]];
+  if (tab === "paper") return go(`#/paper/${id}`);  // old links
   let body = "";
   if (tab === "topics") {
     body = setBuilderHtml(s) + s.topics.filter((t) => topicOnBoard(t, board)).map((t) => {
@@ -870,7 +913,7 @@ async function renderSubject(id, tab = "topics") {
     body = Object.entries(s.boardNotes || {}).map(([b, n]) => `<p><strong>${esc(b)}${b === board ? " (yours)" : ""}</strong>: ${esc(n)}</p>`).join("") || "<p>No notes yet.</p>";
   }
   view(`<p><a href="#/subjects">← Subjects</a></p><h1>${s.icon || ""} ${esc(s.name)} ${board ? `<span class="pill">${esc(board)}</span>` : ""}</h1>
-    <div class="tabs">${tabs.map(([k, l]) => `<a class="btn ${k === tab ? "primary" : ""}" href="#/subject/${id}/${k}">${l}</a>`).join("")}</div>
+    <div class="tabs">${tabs.map(([k, l]) => `<a class="btn ${k === tab ? "primary" : ""}" href="${k === "paper" ? `#/paper/${id}` : `#/subject/${id}/${k}`}">${l}</a>`).join("")}</div>
     <div class="card">${body}</div>`);
   if (tab === "topics") wireSetBuilder(s, board);
 }
@@ -1292,7 +1335,7 @@ async function runStudy(sid, tid, tech) {
   const finish = async (practiceScore) => {
     let checkScore = practiceScore;
     if (tech !== "quiz") {
-      const qs = shuffle(t.quiz).slice(0, 3);
+      const qs = shuffle(quizWithRefs(sid, t)).slice(0, 3);
       checkScore = await new Promise((res) => quizRunner(header("Quick check: 3 questions to see how well that technique worked."), qs, res));
     }
     const rating = await new Promise((res) => {
@@ -1318,7 +1361,7 @@ async function runStudy(sid, tid, tech) {
         <a class="btn primary" href="#/">Back to home</a></div></div>`);
   };
 
-  if (tech === "quiz") return finish(await new Promise((res) => quizRunner(header(), shuffle(t.quiz).slice(0, 6), res)));
+  if (tech === "quiz") return finish(await new Promise((res) => quizRunner(header(), shuffle(quizWithRefs(sid, t)).slice(0, 6), res)));
   if (tech === "flashcards") return finish(await new Promise((res) => flashRunner(header("Tap the card to flip it, then be honest!"), shuffle(t.flashcards.map((c, idx) => ({ ...c, idx }))), false, sid, tid, res)));
   if (tech === "spaced") return finish(await new Promise((res) => flashRunner(header("Rate how well you knew each card. Cards you find hard will come back sooner in Review cards."), shuffle(t.flashcards.map((c, idx) => ({ ...c, idx }))), true, sid, tid, res)));
   if (tech === "summary") {
@@ -1663,15 +1706,18 @@ function markTyped(q, typed) {
 function quizMode() { try { return localStorage.getItem("rh-qmode") || "choice"; } catch { return "choice"; } }
 const QMODES = [["choice", "Multiple choice"], ["typed", "Type the answer"], ["mix", "Mix of both"]];
 
-function quizRunner(headerHtml, questions, done) {
+// opts.stop(): end early (timed sessions). done(score, results) gets [{q, correct}] for each question answered.
+// Questions with a .ref (subject/topic/index) are fed to quiz spaced repetition: wrong ones come back after 1, 3, 7… days.
+function quizRunner(headerHtml, questions, done, opts = {}) {
   let i = 0, right = 0;
+  const results = [];
   const show = () => {
-    if (i >= questions.length) return done(questions.length ? right / questions.length : null);
+    if (i >= questions.length || (i && opts.stop?.())) return done(i ? right / i : null, results);
     const q = questions[i], mode = quizMode();
     const typed = canType(q) && (mode === "typed" || (mode === "mix" && i % 2 === 1));
     const order = shuffle(q.options.map((o, idx) => idx));
     const answer = q.options[q.answer], long = answer.split(/\s+/).length > 5;
-    view(`${headerHtml}<div class="card"><div class="row spread"><div class="muted small">Question ${i + 1} of ${questions.length}</div>
+    view(`${headerHtml}<div class="card"><div class="row spread"><div class="muted small">Question ${i + 1} of ${questions.length}${q.label ? ` · ${esc(q.label)}` : ""}</div>
         <div class="qmode small">${QMODES.map(([k, l]) => `<button data-qm="${k}" class="${k === mode ? "on" : ""}">${l}</button>`).join("")}</div></div>
       <h3>${esc(q.q)}</h3>
       ${typed ? `${long ? '<textarea id="typed" rows="3"' : '<input id="typed" autocomplete="off"'} placeholder="Type your answer…" aria-label="Your answer">${long ? "</textarea>" : ""}
@@ -1712,7 +1758,7 @@ function quizRunner(headerHtml, questions, done) {
           $("#aiexpl").innerHTML = `<div class="explain" style="margin-top:8px"><p>${aiText(a)}</p>${sourcesHtml(S.aiSources)}</div>`;
         } catch (e) { $("#aiexpl").innerHTML = `<p class="bad">${esc(e.message)}</p>`; xb.disabled = false; }
       };
-      $("#nq").onclick = () => { i++; show(); };
+      $("#nq").onclick = () => { results.push({ q, correct: counted }); noteQuiz(q, counted); i++; show(); };
       $("#nq").focus();
     };
     if (typed) {
@@ -1758,7 +1804,7 @@ function flashRunner(headerHtml, cards, spaced, sid, tid, done) {
   show();
 }
 
-async function renderReview() {
+async function renderCardReview() {
   const d = await api("GET", "/api/cards/due");
   if (!d.cards.length) {
     return view(`<h1>📅 Review cards</h1><div class="card"><p>Nothing due right now. 🎉</p>
@@ -1777,6 +1823,464 @@ async function renderReview() {
     view(`${header}<div class="card center"><h2>Review done 🎉</h2><p>You knew about ${pct(score)} of them.</p>
       <a class="btn" href="#/review">More cards</a> <a class="btn primary" href="#/">Home</a></div>`);
   });
+}
+
+// ------------------------------------------------------------------ saved per account: small JSON stores
+const DAY = 86400000;
+function dayKey(t = Date.now()) { return new Date(t).toLocaleDateString("en-CA"); }   // YYYY-MM-DD, local time
+function noon(key) { return new Date(key + "T12:00:00"); }                            // avoids clock-change surprises
+function mondayOf(t = Date.now()) { const d = noon(dayKey(t)); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return dayKey(d); }
+function fmtClock(sec) { sec = Math.max(0, Math.round(sec)); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`; }
+function niceDate(key, opts = { weekday: "short", day: "numeric", month: "short" }) { return noon(key).toLocaleDateString("en-GB", opts); }
+function mean(xs) { return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; }
+
+async function getStore(key) {
+  if (S.storeUser !== S.user?.username) { S.store = {}; S.storeUser = S.user?.username; }
+  if (!(key in S.store)) S.store[key] = (await api("GET", "/api/store/" + key)).data;
+  return S.store[key];
+}
+let storeChain = Promise.resolve();
+function putStore(key, data) {
+  S.store[key] = data;
+  return (storeChain = storeChain.then(() => api("PUT", "/api/store/" + key, { data })).catch(() => { /* kept in this page until next save */ }));
+}
+async function myAttempts() { return (await api("GET", "/api/attempts")).attempts || []; }
+
+// Saves a score per topic (for the progress page and focus topics). items: [{sid, tid, score 0..1, weight}]
+async function recordTopicScores(items, technique, seconds) {
+  const by = {};
+  items.filter((x) => x.sid && x.tid).forEach((x) => { const b = (by[x.sid + "|" + x.tid] ||= [0, 0]); b[0] += x.score * (x.weight || 1); b[1] += x.weight || 1; });
+  const keys = Object.keys(by);
+  for (const k of keys) {
+    const [course, topic] = k.split("|");
+    await api("POST", "/api/attempt", { kind: "subject", course, topic, technique, score: by[k][0] / by[k][1], seconds: Math.round(seconds / keys.length) });
+  }
+}
+const quizItems = (results) => results.map((r) => ({ sid: r.q.sid, tid: r.q.tid, score: r.correct ? 1 : 0 }));
+
+// ------------------------------------------------------------------ spaced repetition for quiz questions
+// A question you get wrong comes back after 1 day. Each time you get it right it waits longer (3 days, a week,
+// 2 weeks, a month); right after that and it's learned. Wrong again starts it from 1 day.
+const QSTEPS = [1, 3, 7, 14, 30];
+function quizWithRefs(sid, t) { return (t.quiz || []).map((q, i) => ({ ...q, ref: `${sid}/${t.id}/${i}`, sid, tid: t.id })); }
+let quizChain = Promise.resolve();
+function noteQuiz(q, correct) { if (q.ref && S.user) quizChain = quizChain.then(() => noteQuizNow(q, correct)).catch(() => {}); }
+async function noteQuizNow(q, correct) {
+  const r = { ...((await getStore("qreview")) || {}) }, k = r[q.ref], now = Date.now();
+  if (!correct) r[q.ref] = { step: 0, due: now + DAY, misses: (k?.misses || 0) + 1 };
+  else if (!k || k.due > now) return;   // never missed, or right again before it was due: schedule stays
+  else if (k.step + 1 >= QSTEPS.length) delete r[q.ref];
+  else r[q.ref] = { ...k, step: k.step + 1, due: now + QSTEPS[k.step + 1] * DAY };
+  await putStore("qreview", r);
+}
+async function quizDue(limit = 30) {
+  const r = (await getStore("qreview")) || {}, now = Date.now(), mine = new Set((S.profile.subjects || []).map((s) => s.id));
+  const out = [];
+  for (const [ref] of Object.entries(r).filter(([ref, k]) => k.due <= now && mine.has(ref.split("/")[0])).sort((a, b) => a[1].due - b[1].due)) {
+    if (out.length >= limit) break;
+    const [sid, tid, i] = ref.split("/");
+    try {
+      const s = await getSubject(sid), t = s.topics.find((x) => x.id === tid), q = t?.quiz?.[+i];
+      if (q) out.push({ ...q, ref, sid, tid, label: `${s.name}: ${t.name} · due again` });
+    } catch { /* subject no longer exists */ }
+  }
+  return out;
+}
+async function quizDueCount() {
+  const r = (await getStore("qreview")) || {}, now = Date.now(), mine = new Set((S.profile.subjects || []).map((s) => s.id));
+  return Object.entries(r).filter(([ref, k]) => k.due <= now && mine.has(ref.split("/")[0])).length;
+}
+
+async function renderReview(part) {
+  const qs = part === "cards" ? [] : await quizDue(20);
+  if (!qs.length) return renderCardReview();
+  const cards = await api("GET", "/api/cards/due");
+  const header = `<h1>📅 Due for review</h1><p class="muted">Quiz questions you got wrong before, back for another go. Get one right and it waits longer
+    (3 days, then a week, 2 weeks, a month). Miss it and it comes back tomorrow.</p>`;
+  quizRunner(header, qs, (score, results) => {
+    const right = results.filter((r) => r.correct).length;
+    view(`${header}<div class="card center"><h2>${right} of ${results.length} right 🎉</h2>
+      <p>${right === results.length ? "All of them. They'll come back later to make sure they've stuck." : "The ones you missed come back tomorrow."}</p>
+      <div class="row" style="justify-content:center">${cards.dueCount ? `<a class="btn primary" href="#/review/cards">Now your flashcards (${cards.dueCount} due)</a>` : ""}
+      <a class="btn${cards.dueCount ? "" : " primary"}" href="#/">Home</a></div></div>`);
+  });
+}
+
+// ------------------------------------------------------------------ how well each topic is known
+// Mastery 0..1 per topic: recent scores count most, and it fades a bit if you haven't practised for weeks.
+// Topics with no scores yet use your confidence rating (covered) or count as not known (not covered yet).
+function topicStats(attempts) {
+  const by = {}, out = {};
+  for (const a of attempts) (by[a.course + "/" + a.topic] ||= []).push(a);
+  for (const [k, rows] of Object.entries(by)) {
+    rows.sort((a, b) => a.created - b.created);
+    let w = 0, sum = 0;
+    rows.slice(-6).reverse().forEach((a, i) => { const wt = 0.7 ** i; w += wt; sum += wt * a.score; });
+    const last = rows[rows.length - 1].created, age = (Date.now() - last) / DAY;
+    out[k] = { n: rows.length, last, mastery: (sum / w) * (age > 45 ? 0.85 : age > 21 ? 0.93 : 1) };
+  }
+  return out;
+}
+async function myTopics(attempts) {
+  const stats = topicStats(attempts), out = [];
+  for (const sub of S.profile.subjects || []) {
+    let s;
+    try { s = await getSubject(sub.id); } catch { continue; }
+    for (const t of s.topics.filter((x) => topicOnBoard(x, sub.board))) {
+      const st = stats[sub.id + "/" + t.id], conf = Math.max(1, Math.min(5, +(sub.confidence || {})[t.id] || 3));
+      const covered = (sub.topicsDone || []).includes(t.id) || !!st;
+      out.push({ sid: sub.id, s, t, covered, practised: st?.n || 0, last: st?.last || 0, guess: !st,
+        mastery: st ? st.mastery : covered ? [0.25, 0.35, 0.45, 0.55, 0.65][conf - 1] : 0.1 });
+    }
+  }
+  return out;
+}
+
+// ------------------------------------------------------------------ daily mixed review
+const DAILY_MIN = 15;
+async function buildDaily() {
+  const due = await quizDue(6), used = new Set(due.map((q) => q.ref));
+  const topics = (await myTopics(await myAttempts())).filter((x) => x.covered && x.t.quiz?.length);
+  // Weakest first (with a little randomness so it isn't the same every day), taking turns across subjects.
+  topics.forEach((x) => (x.pick = x.mastery + Math.random() * 0.2 - (Date.now() - x.last > 7 * DAY ? 0.05 : 0)));
+  const bySub = {};
+  topics.sort((a, b) => a.pick - b.pick).forEach((x) => (bySub[x.sid] ||= []).push(x));
+  const lists = Object.values(bySub), qs = [...due];
+  for (let round = 0; qs.length < 20 && round < 8; round++) {
+    for (const l of lists) {
+      const x = l[round];
+      if (!x || qs.length >= 20) continue;
+      shuffle(quizWithRefs(x.sid, x.t)).filter((q) => !used.has(q.ref)).slice(0, x.mastery < 0.6 ? 2 : 1)
+        .forEach((q) => { used.add(q.ref); qs.push({ ...q, label: `${x.s.name}: ${x.t.name}` }); });
+    }
+  }
+  return qs;
+}
+function dailyStreak(log) {
+  let n = 0;
+  for (let d = Date.now() - (log[dayKey()] ? 0 : DAY); log[dayKey(d)]; d -= DAY) n++;
+  return n;
+}
+async function renderDaily() {
+  const log = (await getStore("daily")) || {}, today = log[dayKey()], streak = dailyStreak(log);
+  const week = [...Array(7)].map((_, i) => dayKey(Date.now() - (6 - i) * DAY));
+  view(`<h1>☀️ Daily mixed review</h1>
+    <div class="card"><p>About ${DAILY_MIN} minutes of questions mixed from all your subjects. It starts with questions you got wrong before that are due again,
+      then picks from your weakest topics. Switching between subjects feels harder than one topic at a time, but that's what makes it stick for the exam.</p>
+      <p class="muted small">${streak ? `🔥 ${streak}-day daily review streak` : "Do one today to start a streak."}${today ? ` · Done today: ${today.right}/${today.n} right` : ""}</p>
+      <div class="weekdots">${week.map((k) => `<span class="${log[k] ? "on" : ""}" title="${niceDate(k)}${log[k] ? `: ${log[k].right}/${log[k].n}` : ""}">${niceDate(k, { weekday: "narrow" })}</span>`).join("")}</div>
+      <button class="primary" id="startd" style="margin-top:12px">${today ? "Do another round" : "Start today's review"}</button></div>`);
+  $("#startd").onclick = async () => {
+    $("#startd").disabled = true;
+    const qs = await buildDaily();
+    if (!qs.length) return view(`<h1>☀️ Daily mixed review</h1><div class="card"><p>Tick the topics you've covered in class first, so the review knows what to ask.</p><a class="btn primary" href="#/setup/1">Choose topics</a></div>`);
+    const started = Date.now(), limit = DAILY_MIN * 60;
+    const header = `<div class="row spread"><h1>☀️ Daily mixed review</h1><span class="pill big" id="dtimer">⏱️ ${fmtClock(limit)} left</span></div>`;
+    const tick = setInterval(() => {
+      const el = $("#dtimer");
+      if (!el) return clearInterval(tick);
+      const left = limit - (Date.now() - started) / 1000;
+      el.textContent = left > 0 ? `⏱️ ${fmtClock(left)} left` : "⏱️ Time's up: last question";
+    }, 500);
+    quizRunner(header, qs, async (score, results) => {
+      clearInterval(tick);
+      const secs = Math.round((Date.now() - started) / 1000), right = results.filter((r) => r.correct).length;
+      await recordTopicScores(quizItems(results), "daily", secs);
+      const l = { ...((await getStore("daily")) || {}) }, k = dayKey(), old = l[k] || { n: 0, right: 0, seconds: 0 };
+      l[k] = { n: old.n + results.length, right: old.right + right, seconds: old.seconds + secs };
+      for (const key of Object.keys(l).sort().slice(0, -400)) delete l[key];
+      await putStore("daily", l);
+      const bySub = {};
+      results.forEach((r) => { const b = (bySub[r.q.label.split(":")[0]] ||= [0, 0]); b[0] += r.correct ? 1 : 0; b[1]++; });
+      view(`<h1>☀️ Daily mixed review</h1><div class="card center"><h2>${right} of ${results.length} right in ${fmtClock(secs)} 🎉</h2>
+        <p class="muted">🔥 ${dailyStreak(l)}-day streak. ${results.length - right ? `The ${results.length - right} you missed come back tomorrow.` : "Clean sweep."}</p></div>
+        <div class="card"><h3>By subject</h3>${Object.entries(bySub).map(([n, [r, t]]) => `<div class="tech-row wide"><span>${esc(n)}</span><div class="bar"><span style="width:${(r / t) * 100}%"></span></div><span class="small muted">${r}/${t}</span></div>`).join("")}</div>
+        <div class="row" style="justify-content:center"><a class="btn" href="#/progress">See my progress</a><a class="btn primary" href="#/">Home</a></div>`);
+    }, { stop: () => Date.now() - started >= limit * 1000 });
+  };
+}
+
+// ------------------------------------------------------------------ revision timetable
+const SEASON = { start: "2027-05-10", end: "2027-06-25" };   // summer 2027 GCSE exams, roughly
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+async function planConfig() {
+  const p = (await getStore("plan")) || {}, exams = {};
+  for (const sub of S.profile.subjects || []) exams[sub.id] = p.exams?.[sub.id] || S.profile.examDate || SEASON.start;
+  return { exams, days: p.days?.length ? p.days : [1, 2, 3, 4, 5, 6], perDay: p.perDay || 2, minutes: p.minutes || 30, sched: p.sched || null, made: p.made || 0, sig: p.sig || "" };
+}
+function planSig(cfg) {
+  return JSON.stringify([cfg.exams, cfg.days, cfg.perDay, (S.profile.subjects || []).map((s) => [s.id, s.board, (s.topicsDone || []).length])]);
+}
+// Builds a day-by-day plan up to each subject's exam. Each pass goes through a subject's topics weakest first
+// (topics not covered in class yet come last, as "learn"), then weak topics again; the last three weeks before
+// an exam mix in timed papers. Subjects share the slots by how much there is to do and how soon the exam is.
+async function makePlan(cfg) {
+  const topics = await myTopics(await myAttempts());
+  const subs = Object.keys(cfg.exams).filter((sid) => topics.some((x) => x.sid === sid));
+  const order = (l) => l.slice().sort((a, b) => (b.covered - a.covered) || a.mastery - b.mastery);
+  const queue = {}, given = {}, papersIn = {}, weight = {};
+  for (const sid of subs) {
+    const mine = topics.filter((x) => x.sid === sid);
+    queue[sid] = [...order(mine), ...order(mine.filter((x) => x.mastery < 0.75 || !x.covered)), ...order(mine.filter((x) => x.mastery < 0.6))];
+    given[sid] = 0; papersIn[sid] = 0;
+    weight[sid] = mine.length * (1.3 - mean(mine.map((x) => x.mastery)));
+  }
+  const days = [], last = subs.map((s) => cfg.exams[s]).sort().pop();
+  for (const d = noon(dayKey()); last && dayKey(d) < last; d.setDate(d.getDate() + 1)) {
+    if (!cfg.days.includes(d.getDay())) continue;
+    const key = dayKey(d), items = [], today = new Set();
+    const active = subs.filter((sid) => cfg.exams[sid] > key);
+    for (let n = 0; n < cfg.perDay && active.length; n++) {
+      const left = (sid) => Math.max(1, (noon(cfg.exams[sid]) - d) / DAY);
+      const pickable = active.filter((sid) => !today.has(sid));
+      const sid = (pickable.length ? pickable : active).sort((a, b) => given[a] / (weight[a] / Math.sqrt(left(a))) - given[b] / (weight[b] / Math.sqrt(left(b))))[0];
+      today.add(sid); given[sid]++;
+      if (left(sid) <= 21 && papersIn[sid]++ % 3 === 0) { items.push([sid, ""]); continue; }
+      if (!queue[sid].length) queue[sid] = order(topics.filter((x) => x.sid === sid));
+      const x = queue[sid].shift();
+      items.push([sid, x.t.id, x.covered ? "" : "learn"]);
+    }
+    days.push([key, items]);
+  }
+  return days;
+}
+async function ensurePlan() {
+  const cfg = await planConfig();
+  if (!cfg.sched || cfg.made < noon(mondayOf()).getTime() - 12 * 3600000 || cfg.sig !== planSig(cfg)) {
+    cfg.sched = await makePlan(cfg); cfg.made = Date.now(); cfg.sig = planSig(cfg);
+    await putStore("plan", { exams: cfg.exams, days: cfg.days, perDay: cfg.perDay, minutes: cfg.minutes, sched: cfg.sched, made: cfg.made, sig: cfg.sig });
+  }
+  return cfg;
+}
+// A planned session counts as done when you've practised that topic (or done a paper in that subject) that day or later in its week.
+async function planDoneCheck() {
+  const attempts = await myAttempts(), papers = (await getStore("papers")) || [];
+  return ([sid, tid], dateKey) => {
+    const from = noon(mondayOf(noon(dateKey))).getTime() - 12 * 3600000;
+    return tid ? attempts.some((a) => a.course === sid && a.topic === tid && a.created >= from)
+      : papers.some((p) => p.sid === sid && p.date >= from);
+  };
+}
+async function planItemHtml(it, done, past) {
+  const [sid, tid, kind] = it;
+  let s;
+  try { s = await getSubject(sid); } catch { return ""; }
+  const t = tid && s.topics.find((x) => x.id === tid);
+  if (tid && !t) return "";
+  const what = !tid ? "⏱️ Timed paper" : kind === "learn" ? `📖 Learn: ${esc(t.name)}` : esc(t.name);
+  const href = !tid ? `#/paper/${sid}` : kind === "learn" ? `#/study/${sid}/${encodeURIComponent(tid)}/summary` : `#/topic/${sid}/${encodeURIComponent(tid)}`;
+  return `<div class="plan-item ${done ? "done" : past ? "missed" : ""}"><span>${done ? "✅" : past ? "⬜" : "▫️"} <span class="muted small">${s.icon || ""} ${esc(s.name)}</span> ${what}
+    ${kind === "learn" ? '<span class="pill">not covered yet</span>' : ""}</span>${done ? "" : `<a class="btn" href="${href}">${past ? "Catch up" : "Start"}</a>`}</div>`;
+}
+async function renderPlan() {
+  const cfg = await ensurePlan(), done = await planDoneCheck(), today = dayKey(), monday = mondayOf();
+  const subs = (S.profile.subjects || []).filter((sub) => cfg.exams[sub.id]);
+  const names = {};
+  for (const sub of subs) { try { names[sub.id] = (await getSubject(sub.id)).name; } catch { /* skip */ } }
+  const first = Object.values(cfg.exams).sort()[0];
+  const daysTo = first ? Math.ceil((noon(first) - noon(today)) / DAY) : null;
+  const sched = cfg.sched || [];
+  const dayHtml = async ([key, items]) => `<div class="plan-day${key === today ? " today" : ""}"><div class="plan-date">${key === today ? "Today" : niceDate(key)}
+      ${subs.filter((s) => cfg.exams[s.id] === key).map((s) => `<span class="pill warn">📝 ${esc(names[s.id])} exam</span>`).join(" ")}</div>
+    ${(await Promise.all(items.map((it) => planItemHtml(it, done(it, key), key < today)))).join("")}</div>`;
+  const thisWeek = sched.filter(([k]) => mondayOf(noon(k)) === monday);
+  const later = {};
+  sched.filter(([k]) => k > today && mondayOf(noon(k)) !== monday).forEach((d) => (later[mondayOf(noon(d[0]))] ||= []).push(d));
+  const weekSummary = (days) => {
+    const n = {};
+    days.forEach(([, items]) => items.forEach(([sid, tid]) => (n[tid ? names[sid] : `⏱️ ${names[sid]} paper`] = (n[tid ? names[sid] : `⏱️ ${names[sid]} paper`] || 0) + 1)));
+    return Object.entries(n).map(([k, v]) => `${esc(k)} ×${v}`).join(", ");
+  };
+  const laterHtml = (await Promise.all(Object.entries(later).slice(0, 40).map(async ([wk, days]) => `<details class="card"><summary><strong>Week of ${niceDate(wk, { day: "numeric", month: "short", year: "numeric" })}</strong>
+      <div class="small muted">${weekSummary(days)}</div></summary>${(await Promise.all(days.map(dayHtml))).join("")}</details>`))).join("");
+  const total = sched.reduce((a, [, items]) => a + items.length, 0);
+  view(`<h1>🗓️ Revision timetable</h1>
+    <div class="card"><p>${daysTo != null && daysTo >= 0 ? `<strong>${daysTo} days</strong> until your first exam. ` : ""}${total} sessions of about ${cfg.minutes} minutes, ${cfg.perDay} a day on ${cfg.days.map((d) => WEEKDAYS[d]).join(", ")}.
+      Weak topics come up first and again later; topics you haven't covered yet come after the ones you have; the last three weeks before each exam include timed papers.
+      It rebuilds itself each week from your latest scores.</p></div>
+    <h2>This week</h2>${thisWeek.length ? (await Promise.all(thisWeek.map(dayHtml))).join("") : '<p class="muted">Nothing planned this week.</p>'}
+    ${laterHtml ? `<h2 style="margin-top:20px">Coming up</h2>${laterHtml}` : ""}
+    <div class="card" style="margin-top:20px"><h2>⚙️ Exam dates and study time</h2>
+      <p class="muted small">Dates start at ${niceDate(SEASON.start, { day: "numeric", month: "long", year: "numeric" })}, the start of the summer 2027 exam season (it runs to about ${niceDate(SEASON.end, { day: "numeric", month: "long" })}).
+      Put in each subject's first exam when your school gives you the real timetable.</p>
+      ${subs.map((s) => `<div class="row spread plan-exam"><label for="ex-${s.id}">${esc(names[s.id] || s.id)}</label><input type="date" id="ex-${s.id}" data-ex="${s.id}" value="${esc(cfg.exams[s.id])}" min="${today}"></div>`).join("")}
+      <label style="margin-top:12px">Days I revise</label><div class="row">${[1, 2, 3, 4, 5, 6, 0].map((d) => `<label class="check"><input type="checkbox" data-day="${d}"${cfg.days.includes(d) ? " checked" : ""}> ${WEEKDAYS[d]}</label>`).join("")}</div>
+      <div class="row" style="margin-top:8px"><label for="perday">Sessions a day</label><select id="perday">${[1, 2, 3, 4, 5].map((n) => `<option${n === cfg.perDay ? " selected" : ""}>${n}</option>`).join("")}</select>
+        <label for="mins">Minutes each</label><select id="mins">${[20, 25, 30, 40, 45, 60].map((n) => `<option${n === cfg.minutes ? " selected" : ""}>${n}</option>`).join("")}</select></div>
+      <p class="error" id="perr"></p><button class="primary" id="psave">Save and rebuild my plan</button></div>`);
+  $("#psave").onclick = async () => {
+    const days = $$("[data-day]:checked").map((b) => +b.dataset.day);
+    if (!days.length) return ($("#perr").textContent = "Pick at least one day.");
+    const exams = Object.fromEntries($$("[data-ex]").map((i) => [i.dataset.ex, i.value || SEASON.start]));
+    $("#psave").disabled = true; $("#psave").textContent = "Building…";
+    await putStore("plan", { exams, days, perDay: +$("#perday").value, minutes: +$("#mins").value, sched: null, made: 0, sig: "" });
+    renderPlan();
+  };
+}
+
+// ------------------------------------------------------------------ timed exam mode
+// Grade boundaries vary by board, tier and year, so this is only a rough guide (about Higher-tier level).
+const GRADES = [[9, 0.8], [8, 0.7], [7, 0.6], [6, 0.5], [5, 0.42], [4, 0.33], [3, 0.25], [2, 0.15], [1, 0.05]];
+function gradeFor(p) { for (const [g, b] of GRADES) if (p >= b) return String(g); return "U"; }
+const PAPER_SIZES = [[20, 22, "Short: 20 marks in 22 minutes"], [40, 45, "Half paper: 40 marks in 45 minutes"], [70, 80, "Full paper: 70 marks in 80 minutes"]];
+function buildPaper(sid, topics, marks) {
+  const mcAll = shuffle(topics.flatMap((t) => quizWithRefs(sid, t).map((q) => ({ ...q, topicName: t.name }))));
+  const mc = mcAll.splice(0, Math.round(marks * 0.3));
+  const written = shuffle(topics.flatMap((t) => [t.examQuestion, ...(t.essayQuestions || [])].filter((q) => q?.marks && q.markScheme?.length)
+    .map((q) => ({ ...q, sid, tid: t.id, topicName: t.name }))));
+  let left = marks - mc.length;
+  const w = [];
+  for (const q of written) {
+    if (left <= 0) break;
+    if (q.marks <= left && (q.marks < 12 || w.filter((x) => x.marks >= 12).length < 2)) { w.push(q); left -= q.marks; }
+  }
+  mc.push(...mcAll.slice(0, Math.max(0, left)));   // top up with short questions
+  return { mc, written: w.sort((a, b) => a.marks - b.marks) };
+}
+async function renderPaper(sid) {
+  const s = await getSubject(sid), mine = mySubject(sid), board = mine?.board;
+  const topics = s.topics.filter((t) => topicOnBoard(t, board)), covered = topics.filter((t) => mine?.topicsDone?.includes(t.id));
+  const past = ((await getStore("papers")) || []).filter((p) => p.sid === sid).slice(-6).reverse();
+  view(`<p><a href="#/subject/${sid}">← ${esc(s.name)}</a></p><h1>⏱️ Timed paper: ${esc(s.name)}</h1>
+    <div class="card"><p>A mock paper built from this subject's questions, done against the clock like the real exam: short questions first, then longer written ones.
+      When time's up you mark the written answers against the mark scheme${aiOn() ? " (or let the AI mark them)" : ""} and get a rough grade.</p>
+      ${board && s.boardNotes?.[board] ? `<p class="small muted">Your real exam (${esc(board)}): ${esc(s.boardNotes[board])}</p>` : ""}
+      <label>How long?</label>${PAPER_SIZES.map(([m, , l], i) => `<label class="check"><input type="radio" name="len" value="${m}"${i === 1 ? " checked" : ""}> ${l}</label>`).join("")}
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="onlycov"${covered.length ? " checked" : " disabled"}> Only topics I've covered (${covered.length} of ${topics.length})</label>
+      <button class="primary" id="startp" style="margin-top:12px">Start the clock</button></div>
+    ${past.length ? `<div class="card"><h3>Your recent papers</h3>${past.map((p) => `<div class="row spread"><span>${niceDate(dayKey(p.date))}: ${p.got}/${p.total} (${pct(p.got / p.total)})</span><span class="pill">Grade ${esc(p.grade)}</span></div>`).join("")}</div>` : ""}`);
+  $("#startp").onclick = () => {
+    const marks = +($("[name=len]:checked")?.value || 40), [, minutes] = PAPER_SIZES.find((x) => x[0] === marks);
+    const p = buildPaper(sid, $("#onlycov").checked ? covered : topics, marks);
+    if (!p.mc.length && !p.written.length) return alert("There aren't enough questions for a paper yet.");
+    sitPaper(s, sid, p, minutes);
+  };
+}
+function sitPaper(s, sid, p, minutes) {
+  const total = p.mc.length + p.written.reduce((a, q) => a + q.marks, 0), started = Date.now(), limit = minutes * 60;
+  const opts = p.mc.map((q) => shuffle(q.options.map((o, i) => i)));
+  view(`<div class="paperbar"><strong>${esc(s.name)}</strong><span>⏱️ <span id="clock">${fmtClock(limit)}</span> left</span>
+      <span class="small"><span id="answered">0</span>/${p.mc.length + p.written.length} answered</span><button class="primary" id="handin">Hand in</button></div>
+    <p class="muted">${total} marks · ${minutes} minutes. ${p.written.length ? "Aim for about a minute a mark on the written questions." : ""}</p>
+    ${p.mc.length ? `<h2>Section A: short questions</h2>${p.mc.map((q, n) => `<div class="card"><p><strong>${n + 1}.</strong> ${esc(q.q)} <span class="muted small">[1 mark]</span></p>
+      ${opts[n].map((i) => `<label class="check"><input type="radio" name="mc${n}" value="${i}"> ${esc(q.options[i])}</label>`).join("")}</div>`).join("")}` : ""}
+    ${p.written.length ? `<h2>Section B: written questions</h2>${p.written.map((q, n) => `<div class="card"><p><strong>${p.mc.length + n + 1}.</strong> ${esc(q.q)}${/mark/i.test(q.q) ? "" : ` <span class="muted small">[${q.marks} marks]</span>`}</p>
+      <textarea data-w="${n}" rows="${Math.min(18, 4 + q.marks)}" placeholder="Your answer…"></textarea></div>`).join("")}` : ""}
+    <button class="primary" id="handin2">Hand in my paper</button>`);
+  const answered = () => p.mc.filter((q, n) => $(`[name=mc${n}]:checked`)).length + $$("[data-w]").filter((t) => t.value.trim()).length;
+  app().oninput = () => { const el = $("#answered"); if (el) el.textContent = answered(); };
+  let over = false;
+  const handIn = () => {
+    if (over) return;
+    over = true; clearInterval(tick); app().oninput = null;
+    const picks = p.mc.map((q, n) => $(`[name=mc${n}]:checked`) ? +$(`[name=mc${n}]:checked`).value : null);
+    const texts = p.written.map((q, n) => $(`[data-w="${n}"]`).value);
+    markPaper(s, sid, p, picks, texts, Math.min(limit, Math.round((Date.now() - started) / 1000)), minutes);
+  };
+  const tick = setInterval(() => {
+    const el = $("#clock");
+    if (!el) { clearInterval(tick); app().oninput = null; return; }
+    const left = limit - (Date.now() - started) / 1000;
+    el.textContent = fmtClock(left);
+    el.parentElement.classList.toggle("bad", left < 300);
+    if (left <= 0) { alert("Time's up! Pens down."); handIn(); }
+  }, 500);
+  const ask = () => { if (over) return; const left = answered() < p.mc.length + p.written.length; if (confirm(left ? "You haven't answered every question. Hand in anyway?" : "Hand in your paper?")) handIn(); };
+  $("#handin").onclick = ask; $("#handin2").onclick = ask;
+}
+async function markPaper(s, sid, p, picks, texts, seconds, minutes) {
+  const items = [];
+  let got = 0;
+  p.mc.forEach((q, n) => { const ok = picks[n] === q.answer; got += ok ? 1 : 0; items.push({ sid, tid: q.tid, score: ok ? 1 : 0, weight: 1 }); noteQuiz(q, ok); });
+  const wMarks = [];
+  for (let n = 0; n < p.written.length; n++) {
+    const q = p.written[n], text = texts[n];
+    const frac = !text.trim() ? 0 : await new Promise((res) => {
+      view(`<h1>✍️ Marking: question ${p.mc.length + n + 1}</h1><p class="muted">Written question ${n + 1} of ${p.written.length}. Be honest: a generous mark now means a nasty surprise in May.</p>
+        <div class="card"><p><strong>${esc(q.q)}</strong></p><div class="muted small">Your answer</div><div class="explain">${aiText(text)}</div></div>
+        ${markingHtml(q, { text })}`);
+      wireMarking(q, { s, sid, tid: q.tid, text, save: res });
+    });
+    const m = Math.round(frac * q.marks);
+    wMarks.push(m); got += m;
+    items.push({ sid, tid: q.tid, score: m / q.marks, weight: q.marks });
+  }
+  const total = p.mc.length + p.written.reduce((a, q) => a + q.marks, 0), grade = gradeFor(got / total);
+  await recordTopicScores(items, "paper", seconds);
+  const papers = [...((await getStore("papers")) || []), { sid, date: Date.now(), got, total, grade, minutes, seconds }].slice(-100);
+  await putStore("papers", papers);
+  const byTopic = {};
+  p.mc.forEach((q, n) => { const b = (byTopic[q.topicName] ||= [0, 0]); b[0] += picks[n] === q.answer ? 1 : 0; b[1]++; });
+  p.written.forEach((q, n) => { const b = (byTopic[q.topicName] ||= [0, 0]); b[0] += wMarks[n]; b[1] += q.marks; });
+  const mcWrong = p.mc.map((q, n) => [q, picks[n]]).filter(([q, pk]) => pk !== q.answer);
+  view(`<p><a href="#/subject/${sid}">← ${esc(s.name)}</a></p><h1>⏱️ Paper results</h1>
+    <div class="card center"><div style="font-size:2.4rem;font-weight:700">${got}/${total}</div><div class="muted">${pct(got / total)} in ${fmtClock(seconds)} of ${minutes}:00</div>
+      <p style="margin-top:10px"><span class="pill big">Roughly a grade ${grade}</span></p>
+      <p class="small muted">A rough guide only: real grade boundaries change every year and differ by exam board and tier.</p></div>
+    <div class="card"><h3>By topic (weakest first)</h3>${Object.entries(byTopic).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]).map(([n, [g, t]]) =>
+      `<div class="tech-row wide"><span>${esc(n)}</span><div class="bar"><span style="width:${(g / t) * 100}%"></span></div><span class="small muted">${g}/${t}</span></div>`).join("")}</div>
+    ${mcWrong.length ? `<div class="card"><h3>Short questions you missed</h3><p class="small muted">These come back in your Due list tomorrow.</p>${mcWrong.map(([q, pk]) => `<p><strong>${esc(q.q)}</strong><br>
+      ${pk != null ? `You said: ${esc(q.options[pk])}<br>` : "Not answered<br>"}✅ ${esc(q.options[q.answer])}${q.explain ? `<br><span class="small muted">${esc(q.explain)}</span>` : ""}</p>`).join("")}</div>` : ""}
+    <div class="row" style="justify-content:center"><a class="btn" href="#/paper/${sid}" onclick="setTimeout(route)">Another paper</a><a class="btn primary" href="#/progress">My progress</a></div>`);
+}
+
+// ------------------------------------------------------------------ progress dashboard
+async function renderProgress() {
+  const attempts = await myAttempts(), topics = await myTopics(attempts), papers = (await getStore("papers")) || [], cfg = await planConfig();
+  const subs = (S.profile.subjects || []).filter((sub) => topics.some((x) => x.sid === sub.id));
+  const goal = (S.profile.goal || "").match(/\b([4-9])\b/)?.[1];
+  const cards = subs.map((sub) => {
+    const mine = topics.filter((x) => x.sid === sub.id), cov = mine.filter((x) => x.covered), s = mine[0].s;
+    const ps = papers.filter((p) => p.sid === sub.id).slice(-3), paperAvg = mean(ps.map((p) => p.got / p.total));
+    const blend = (x) => (x == null ? paperAvg : paperAvg == null ? x : 0.5 * x + 0.5 * paperAvg);
+    const now = blend(mean(cov.map((x) => x.mastery))), whole = blend(mean(mine.map((x) => x.mastery)));
+    const drag = cov.slice().sort((a, b) => a.mastery - b.mastery).slice(0, 4);
+    const practised = mine.filter((x) => x.practised).length;
+    const daysTo = cfg.exams[sub.id] ? Math.ceil((noon(cfg.exams[sub.id]) - noon(dayKey())) / DAY) : null;
+    return { sub, s, mine, cov, ps, now, whole, drag, practised, daysTo };
+  }).sort((a, b) => (a.now ?? 0) - (b.now ?? 0));
+  const totalPractised = cards.reduce((a, c) => a + c.practised, 0), totalTopics = cards.reduce((a, c) => a + c.mine.length, 0);
+  view(`<h1>📈 My progress</h1>
+    <div class="card"><p>A predicted grade for each subject, worked out from your recent quiz, review and paper scores on each topic (recent ones count most, and they fade if you
+      leave a topic for weeks), plus your last three timed papers. Topics you haven't practised use your confidence rating as a guess.</p>
+      <p class="small muted">So far it has real scores for ${totalPractised} of ${totalTopics} topics. The more you practise, and the more timed papers you do, the more accurate it gets.
+      Grades are a rough guide: real boundaries change every year.</p></div>
+    ${cards.map((c) => `<div class="card">
+      <div class="row spread"><h2 style="margin:0">${c.s.icon || ""} ${esc(c.s.name)} ${c.sub.board ? `<span class="pill">${esc(c.sub.board)}</span>` : ""}</h2>
+        <div class="center"><div class="grade-big ${goal && +gradeFor(c.now ?? 0) >= +goal ? "ok" : ""}">${c.now == null ? "–" : gradeFor(c.now)}</div><div class="small muted">predicted</div></div></div>
+      <p class="small muted">${c.now == null ? "Tick topics you've covered to get a prediction." : `On the ${c.cov.length} topics you've covered: about ${pct(c.now)}.`}
+        ${c.cov.length < c.mine.length ? ` If you sat the whole exam today: grade ${gradeFor(c.whole ?? 0)} (${c.mine.length - c.cov.length} topics not covered yet).` : ""}
+        ${c.daysTo != null && c.daysTo >= 0 ? ` ${c.daysTo} days to the exam.` : ""}</p>
+      <div class="tech-row"><span class="small">Topics covered</span><div class="bar"><span style="width:${(c.cov.length / c.mine.length) * 100}%"></span></div><span class="small muted">${c.cov.length}/${c.mine.length}</span></div>
+      <div class="tech-row"><span class="small">Topics practised</span><div class="bar"><span style="width:${(c.practised / c.mine.length) * 100}%"></span></div><span class="small muted">${c.practised}/${c.mine.length}</span></div>
+      ${c.drag.length ? `<h3 style="margin-top:12px">Dragging it down</h3>${c.drag.map((x) => `<div class="plan-item"><span>${esc(x.t.name)}
+        <span class="small muted">${x.guess ? "not practised yet" : `${pct(x.mastery)} · ${x.practised} session${x.practised === 1 ? "" : "s"}`}</span></span>
+        <a class="btn" href="#/topic/${c.sub.id}/${encodeURIComponent(x.t.id)}">Revise</a></div>`).join("")}` : ""}
+      <div class="row" style="margin-top:10px"><a class="btn" href="#/paper/${c.sub.id}">⏱️ Timed paper</a>
+        ${c.ps.length ? `<span class="small muted">Last papers: ${c.ps.map((p) => `${pct(p.got / p.total)} (${esc(p.grade)})`).join(", ")}</span>` : ""}</div>
+    </div>`).join("") || '<div class="card"><p>Pick your subjects first.</p><a class="btn" href="#/setup/0">Choose subjects</a></div>'}`);
+}
+
+// ------------------------------------------------------------------ home page extras
+async function homeExtra(cardsDue) {
+  const el = $("#homeextra");
+  if (!el) return;
+  try {
+    const [qd, log, cfg] = await Promise.all([quizDueCount(), getStore("daily"), ensurePlan()]);
+    const today = dayKey(), plan = (cfg.sched || []).find(([k]) => k === today), done = await planDoneCheck();
+    const daily = (log || {})[today];
+    const items = plan ? (await Promise.all(plan[1].map((it) => planItemHtml(it, done(it, today), false)))).join("") : "";
+    if (!$("#homeextra")) return;
+    el.innerHTML = `<div class="grid">
+      <a class="card" style="text-decoration:none;color:inherit" href="#/daily"><div style="font-size:1.6rem">☀️</div><strong>Daily mixed review</strong>
+        <div class="small muted">${daily ? `✅ Done today: ${daily.right}/${daily.n}` : `${DAILY_MIN} minutes, all subjects`}${dailyStreak(log || {}) ? ` · 🔥 ${dailyStreak(log || {})}-day streak` : ""}</div></a>
+      <a class="card" style="text-decoration:none;color:inherit" href="#/review"><div style="font-size:1.6rem">📅</div><strong>Due for review</strong>
+        <div class="small muted">${qd || cardsDue ? `${qd ? `${qd} quiz question${qd === 1 ? "" : "s"}` : ""}${qd && cardsDue ? " and " : ""}${cardsDue ? `${cardsDue} flashcard${cardsDue === 1 ? "" : "s"}` : ""}` : "Nothing due right now"}</div></a>
+      <a class="card" style="text-decoration:none;color:inherit" href="#/progress"><div style="font-size:1.6rem">📈</div><strong>Predicted grades</strong>
+        <div class="small muted">And the topics holding each one back</div></a></div>
+      <div class="card" style="margin-top:14px"><div class="row spread"><h2 style="margin:0">🗓️ Today's plan</h2><a href="#/plan">Full timetable →</a></div>
+        ${items || '<p class="muted">Nothing planned today. Enjoy the day off, or do a daily review.</p>'}</div>`;
+  } catch { /* the rest of the home page still works */ }
 }
 
 // ------------------------------------------------------------------ exam technique
