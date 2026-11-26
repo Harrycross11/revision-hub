@@ -12,7 +12,7 @@
   --code-bg: #0f172a; --code-text: #e2e8f0; --radius: 12px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #0e1117; --card: #171b24; --text: #e6e8ef; --muted: #98a1b3; --line: #2a3040;
     --accent: #818cf8; --accent-soft: #23264a; --good: #4ade80; --good-soft: #13291d;
     --bad: #f87171; --bad-soft: #321616; --warn: #fbbf24; --warn-soft: #2e2410; --code-bg: #0a0d14;
@@ -187,8 +187,9 @@ details.card > summary { cursor: pointer; }
   background-image: linear-gradient(90deg, transparent 3.2rem, var(--margin) 3.2rem, var(--margin) calc(3.2rem + 2px), transparent calc(3.2rem + 2px)),
     repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--ll) - 1px), var(--rule) calc(var(--ll) - 1px), var(--rule) var(--ll));
   border: 1px solid var(--line); border-radius: 6px; padding: var(--ll) 1.2rem var(--ll) 4rem; min-height: 60vh; margin-bottom: 16px; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+:root[data-theme="night"] .lesson-paper { --ink: #dbe4ff; --ink2: #fca5a5; --ink3: #86efac; --paper: #1a2030; --rule: #2b3550; --margin: #6b3a44; --hl: rgba(250, 204, 21, .22); }
 @media (prefers-color-scheme: dark) {
-  .lesson-paper { --ink: #dbe4ff; --ink2: #fca5a5; --ink3: #86efac; --paper: #1a2030; --rule: #2b3550; --margin: #6b3a44; --hl: rgba(250, 204, 21, .22); }
+  :root:not([data-theme]) .lesson-paper { --ink: #dbe4ff; --ink2: #fca5a5; --ink3: #86efac; --paper: #1a2030; --rule: #2b3550; --margin: #6b3a44; --hl: rgba(250, 204, 21, .22); }
 }
 @media (max-width: 560px) {
   .lesson-paper { padding-left: 1rem; padding-right: .8rem; font-size: 1.45rem;
@@ -232,7 +233,257 @@ details.card > summary { cursor: pointer; }
 .cw-row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .cw-word { font-weight: 700; }
 @media (max-width: 560px) { .cw-row { grid-template-columns: 1fr; gap: 2px; } }
+/* learning tools */
+.whyrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; font-size: .9rem; cursor: pointer; }
+.chip:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.teachgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px 20px; }
+.gbrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); gap: 6px; margin: 8px 0; }
+.gbcell { border: 1px solid var(--line); border-radius: 10px; padding: 6px; text-align: center; }
+.gbcell.hi { border-color: var(--accent); }
+.gbg { font-weight: 800; font-size: 1.2rem; }
+.gbt { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 6px; }
+.gbt th, .gbt td { border-bottom: 1px solid var(--line); padding: 4px; text-align: center; }
+.gbt td:first-child, .gbt th:first-child { text-align: left; }
+.big-mnemo { font-size: 2rem; font-weight: 800; letter-spacing: .15em; margin: 4px 0; word-break: break-all; }
+.palace-row { display: grid; grid-template-columns: 160px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.locus { font-weight: 700; color: var(--accent); }
+@media (max-width: 560px) { .palace-row { grid-template-columns: 1fr; gap: 2px; } }
 </style>
+  <style>/* ---- themes and section colours (static/theme.js sets data-theme, data-section and data-hue on <html>) ---- */
+:root[data-theme="pastel"] { --bg: #f7f6fb; --card: #ffffff; --text: #1f2333; --muted: #626a7e; --line: #e6e3ef; }
+:root[data-theme="lavender"] { --bg: #f3effd; --card: #fffdff; --text: #241f38; --muted: #675f80; --line: #e3dcf5; }
+:root[data-theme="mint"] { --bg: #eef8f3; --card: #fcfffd; --text: #1b2b25; --muted: #5a6f66; --line: #d8eae1; }
+:root[data-theme="peach"] { --bg: #fdf4ee; --card: #fffdfb; --text: #2e211b; --muted: #77645a; --line: #f0e0d4; }
+:root[data-theme="night"] { --bg: #12141c; --card: #1b1f2b; --text: #e8eaf2; --muted: #9aa3b5; --line: #2c3243; --good: #4ade80; --good-soft: #13291d;
+  --bad: #f87171; --bad-soft: #321616; --warn: #fbbf24; --warn-soft: #2e2410; --code-bg: #0b0e15; color-scheme: dark; }
+:root[data-theme="classic"] { --bg: #f6f7fb; --card: #ffffff; --text: #1d2233; --muted: #667085; --line: #e3e6ef; }
+[data-hue="sky"] { --h: #1d64b0; --hs: #dbeafe; --hw: #eef5ff; }
+[data-hue="mint"] { --h: #0f7a5c; --hs: #d5f5e8; --hw: #ecfaf4; }
+[data-hue="peach"] { --h: #b4531a; --hs: #ffe4d1; --hw: #fff3ea; }
+[data-hue="rose"] { --h: #b02a67; --hs: #ffe0ee; --hw: #fff0f6; }
+[data-hue="lavender"] { --h: #6a48c9; --hs: #ebe4ff; --hw: #f5f1ff; }
+[data-hue="lemon"] { --h: #806000; --hs: #fff2bf; --hw: #fffae6; }
+[data-hue="teal"] { --h: #0e7490; --hs: #d3f2f8; --hw: #ebf9fc; }
+[data-hue="coral"] { --h: #b83b3b; --hs: #ffe0db; --hw: #fff1ee; }
+[data-hue="sage"] { --h: #4a6b3a; --hs: #e3efd9; --hw: #f2f8ed; }
+[data-hue="periwinkle"] { --h: #4453c8; --hs: #e1e5ff; --hw: #f1f3ff; }
+[data-theme="night"] [data-hue="sky"], [data-theme="night"][data-hue="sky"] { --h: #8cc2ff; --hs: #1b2a40; --hw: #151d2b; }
+[data-theme="night"] [data-hue="mint"], [data-theme="night"][data-hue="mint"] { --h: #7fdcb9; --hs: #15302a; --hw: #121f1c; }
+[data-theme="night"] [data-hue="peach"], [data-theme="night"][data-hue="peach"] { --h: #ffb88a; --hs: #3a2618; --hw: #221a15; }
+[data-theme="night"] [data-hue="rose"], [data-theme="night"][data-hue="rose"] { --h: #ff9cc8; --hs: #3a1a2a; --hw: #22161d; }
+[data-theme="night"] [data-hue="lavender"], [data-theme="night"][data-hue="lavender"] { --h: #c3adff; --hs: #29223f; --hw: #1b1828; }
+[data-theme="night"] [data-hue="lemon"], [data-theme="night"][data-hue="lemon"] { --h: #f2d56b; --hs: #332c12; --hw: #1f1c12; }
+[data-theme="night"] [data-hue="teal"], [data-theme="night"][data-hue="teal"] { --h: #7fd6ea; --hs: #12303a; --hw: #121d22; }
+[data-theme="night"] [data-hue="coral"], [data-theme="night"][data-hue="coral"] { --h: #ff9f96; --hs: #3a1c1c; --hw: #221616; }
+[data-theme="night"] [data-hue="sage"], [data-theme="night"][data-hue="sage"] { --h: #b4d69c; --hs: #232f1d; --hw: #181e16; }
+[data-theme="night"] [data-hue="periwinkle"], [data-theme="night"][data-hue="periwinkle"] { --h: #a9b3ff; --hs: #1f2442; --hw: #171a2b; }
+/* the page takes the colour of the section (or subject) you are in; Classic keeps one colour */
+:root:not([data-theme="classic"])[data-hue] { --accent: var(--h); --accent-soft: var(--hs); }
+:root:not([data-theme="classic"])[data-hue] body { background: linear-gradient(180deg, var(--hs) 0, var(--hw) 260px, var(--bg) 620px) no-repeat, var(--bg); }
+:root[data-theme="night"] .primary, :root[data-theme="night"] .tabs .btn.primary, :root[data-theme="night"] .tabs button.on, :root[data-theme="night"] .subnav a.on,
+:root[data-theme="night"] .qmode button.on, :root[data-theme="night"] .confidence button.on { color: #11141c; }
+body { transition: background-color .25s; }
+
+/* top bar: icons, one colour per link, scrolls sideways on phones */
+.topbar { backdrop-filter: saturate(1.4) blur(8px); background: color-mix(in srgb, var(--card) 88%, transparent); box-shadow: 0 2px 14px rgba(30, 30, 60, .05); }
+.topbar nav { flex: 1; min-width: 0; gap: 2px; }
+.topbar nav a { padding: 6px 9px; font-size: .9rem; }
+@media (max-width: 1340px) and (min-width: 761px) { .topbar .brand { font-size: 0; } .topbar .brand::first-letter { font-size: 1.4rem; } #themebtn span { display: none; } .topbar nav a { padding: 5px 7px; font-size: .86rem; } }
+.topbar nav a { display: inline-flex; align-items: center; gap: 5px; color: var(--text); opacity: .82; transition: background .15s, opacity .15s, transform .15s; white-space: nowrap; }
+.topbar nav a .nicon { font-size: 1.05em; line-height: 1; }
+.topbar nav a:hover { opacity: 1; background: var(--hs, var(--accent-soft)); color: var(--h, var(--accent)); transform: translateY(-1px); }
+.topbar nav a.active, .topbar nav a.here { opacity: 1; background: var(--hs, var(--accent-soft)); color: var(--h, var(--accent)); font-weight: 650;
+  box-shadow: inset 0 -2px 0 var(--h, var(--accent)); }
+:root[data-theme="classic"] .topbar nav a:hover, :root[data-theme="classic"] .topbar nav a.here, :root[data-theme="classic"] .topbar nav a.active { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
+@media (max-width: 760px) {
+  .topbar { flex-wrap: nowrap; gap: 8px; padding: 8px 10px; }
+  .topbar .brand { font-size: 0; } .topbar .brand::first-letter { font-size: 1.4rem; }
+  .topbar nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; mask-image: linear-gradient(90deg, #000 90%, transparent); }
+  .topbar nav::-webkit-scrollbar { display: none; }
+  #themebtn span { display: none; }
+}
+.themewrap { position: relative; margin-left: auto; }
+#themebtn { padding: 6px 10px; border-radius: 99px; font-size: .9rem; white-space: nowrap; }
+.themepop { position: absolute; right: 0; top: calc(100% + 8px); width: min(340px, 92vw); background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px; box-shadow: 0 14px 40px rgba(20, 20, 50, .18); z-index: 60; }
+.themegrid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.themepop .themegrid { grid-template-columns: 1fr; max-height: 70vh; overflow: auto; }
+.themeopt { display: flex; gap: 10px; align-items: center; text-align: left; padding: 8px 10px; line-height: 1.3; border-radius: 12px; }
+.themeopt.on { border: 2px solid var(--accent); background: var(--accent-soft); }
+.tsw { display: inline-flex; flex: none; }
+.tsw i { width: 18px; height: 30px; display: block; border: 1px solid rgba(0, 0, 0, .1); }
+.tsw i:first-child { border-radius: 8px 0 0 8px; } .tsw i:last-child { border-radius: 0 8px 8px 0; }
+
+/* headings and cards: a little more colour and life */
+:root:not([data-theme="classic"]) .container > h1::after { content: ""; display: block; width: 64px; height: 5px; border-radius: 99px; background: var(--h); opacity: .6; margin-top: 8px; }
+.card { transition: transform .15s, box-shadow .15s, border-color .15s; }
+a.card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(30, 30, 70, .09); border-color: var(--h, var(--accent)); }
+:root:not([data-theme="classic"]) a.card.tint { background: linear-gradient(160deg, var(--hs), var(--card) 85%); border-color: transparent; box-shadow: inset 4px 0 0 var(--h); }
+:root:not([data-theme="classic"]) a.card.tint .bar > span { background: var(--h); }
+:root:not([data-theme="classic"]) a.card.tint .pill { background: var(--card); color: var(--h); }
+:root:not([data-theme="classic"]) a.btn[data-hue]:not(.primary) { border-color: var(--hs); background: var(--hw); }
+:root:not([data-theme="classic"]) a.btn[data-hue]:not(.primary):hover { border-color: var(--h); }
+:root:not([data-theme="classic"]) .card h2 { position: relative; }
+.bar > span { transition: width .6s ease; }
+
+/* the welcome banner becomes a soft pastel card in the section's colour */
+:root:not([data-theme="classic"]) .hero { background: linear-gradient(135deg, var(--hs), color-mix(in srgb, var(--hs) 55%, var(--card)) 60%, var(--hw));
+  color: var(--text); border: 1px solid color-mix(in srgb, var(--h) 22%, transparent); box-shadow: 0 10px 30px color-mix(in srgb, var(--h) 14%, transparent); }
+:root:not([data-theme="classic"]) .hero .muted { color: var(--muted); }
+:root:not([data-theme="classic"]) .hero button, :root:not([data-theme="classic"]) .hero .btn { background: var(--h); color: #fff; border: 0; font-weight: 650; }
+:root[data-theme="night"] .hero button, :root[data-theme="night"] .hero .btn { color: #11141c; }
+:root:not([data-theme="classic"]) .hero strong { color: var(--h); }
+
+#totop[hidden] { display: none; }
+#totop { position: fixed; right: 16px; bottom: 18px; z-index: 40; width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 1.2rem;
+  background: var(--accent); color: #fff; border: 0; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+:root[data-theme="night"] #totop { color: #11141c; }
+@media (prefers-reduced-motion: reduce) { .card, .topbar nav a, .bar > span, body { transition: none; } a.card:hover, .topbar nav a:hover { transform: none; } }
+</style>
+  <script>/* Revision Hub themes and section colours. Runs before the page draws so there is no flash.
+   - Theme (localStorage "rh-theme"): auto, pastel, lavender, mint, peach, night, classic.
+   - Every section of the site (and every subject and coding course) gets its own pastel colour.
+   Works by watching the address and the page, so app.js does not need to know about it. */
+(function () {
+  "use strict";
+  const THEMES = [
+    { id: "auto", name: "Auto", desc: "Pastel by day, Night when your device is in dark mode", sw: ["#f7f6fb", "#12141c"] },
+    { id: "pastel", name: "Pastel", desc: "Light and soft, each section in its own colour", sw: ["#f7f6fb", "#dbeafe", "#ffe0ee"] },
+    { id: "lavender", name: "Lavender", desc: "A gentle purple tint everywhere", sw: ["#f3effd", "#ebe4ff", "#c3adff"] },
+    { id: "mint", name: "Mint", desc: "Fresh and green, easy on the eyes", sw: ["#eef8f3", "#d5f5e8", "#7fdcb9"] },
+    { id: "peach", name: "Peach", desc: "Warm and cosy", sw: ["#fdf4ee", "#ffe4d1", "#ffb88a"] },
+    { id: "night", name: "Night", desc: "Dark background with glowing pastel sections", sw: ["#12141c", "#29223f", "#8cc2ff"] },
+    { id: "classic", name: "Classic", desc: "The original plain look, one colour throughout", sw: ["#f6f7fb", "#4f46e5"] },
+  ];
+  // where each page lives: [section, colour, icon, label]
+  const SECTIONS = {
+    home: ["lavender", "🏠", "Home"], subjects: ["sky", "📚", "Subjects"], papers: ["teal", "📄", "Past papers"],
+    daily: ["mint", "⚡", "Daily review"], review: ["mint", "🔁", "Due"], plan: ["peach", "🗓️", "Timetable"],
+    progress: ["lemon", "📈", "Progress"], coding: ["rose", "💻", "Coding"], technique: ["coral", "📝", "Exam technique"],
+    ask: ["periwinkle", "🔎", "Ask"], settings: ["sage", "👤", "Me"],
+    tools: ["teal", "🧰", "Tools"],
+  };
+  const ROUTE = { "": "home", subjects: "subjects", subject: "subjects", topic: "subjects", study: "subjects", set: "subjects", write: "subjects",
+    paper: "papers", daily: "daily", review: "review", plan: "plan", progress: "progress", coding: "coding", code: "coding",
+    "exam-technique": "technique", ask: "ask", settings: "settings", setup: "settings",
+    tools: "tools", mistakes: "tools", mix: "tools", grades: "tools", memory: "tools" };
+  // fixed colours for harry's subjects so each one always looks the same; others get one from their name
+  const HUES = ["sky", "mint", "peach", "rose", "lavender", "lemon", "teal", "coral", "sage", "periwinkle"];
+  const FIXED = { maths: "sky", "further-maths": "periwinkle", "english-language": "coral", "english-literature": "rose", biology: "mint",
+    chemistry: "teal", physics: "periwinkle", french: "lavender", history: "peach", "sports-science": "lemon", "computer-science": "sage",
+    python: "sky", javascript: "lemon", "html-css": "peach", cpp: "periwinkle", sql: "teal", java: "coral" };
+  function hueOf(id) {
+    if (!id) return null;
+    if (FIXED[id]) return FIXED[id];
+    let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return HUES[h % HUES.length];
+  }
+
+  const root = document.documentElement;
+  const dark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function saved() { try { return localStorage.getItem("rh-theme") || "auto"; } catch { return "auto"; } }
+  function apply(choice = saved()) {
+    const t = choice === "auto" ? (dark && dark.matches ? "night" : "pastel") : choice;
+    root.dataset.theme = THEMES.some((x) => x.id === t) ? t : "pastel";
+    root.dataset.themeChoice = choice;
+  }
+  function setTheme(id) { try { localStorage.setItem("rh-theme", id); } catch { /* not saved */ } apply(id); paintPickers(); }
+  apply();
+  if (dark) (dark.addEventListener ? dark.addEventListener("change", () => apply()) : dark.addListener(() => apply()));
+
+  function parts() { return location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch { return p; } }); }
+  function sectionOf(p) {
+    if (p[0] === "subject" && p[2] === "past") return "papers";
+    return ROUTE[p[0] || ""] || "home";
+  }
+  function markSection() {
+    const p = parts(), sec = sectionOf(p);
+    root.dataset.section = sec;
+    // inside one subject or course, use that subject's colour
+    const inSubject = ["subject", "topic", "study", "write", "paper", "code"].includes(p[0]) && p[1];
+    root.dataset.hue = inSubject ? hueOf(p[1]) : SECTIONS[sec][0];
+    document.querySelectorAll(".topbar nav a").forEach((a) => {
+      const s = ROUTE[(a.getAttribute("href") || "").replace(/^#\/?/, "").split("/")[0]];
+      a.classList.toggle("here", s === sec || (sec === "papers" && s === "subjects"));
+    });
+    const nav = document.querySelector(".topbar nav"), here = nav && nav.querySelector("a.here");
+    if (here && nav.scrollWidth > nav.clientWidth + 4) nav.scrollTo({ left: here.offsetLeft - nav.clientWidth / 2 + here.offsetWidth / 2, behavior: "smooth" });
+  }
+
+  // nav: an icon and a colour for every link, and a theme button
+  function decorateNav() {
+    const nav = document.querySelector(".topbar nav");
+    if (!nav || nav.dataset.decorated) return;
+    nav.dataset.decorated = "1";
+    nav.querySelectorAll("a").forEach((a) => {
+      const sec = ROUTE[(a.getAttribute("href") || "").replace(/^#\/?/, "").split("/")[0]];
+      if (!sec) return;
+      a.dataset.hue = SECTIONS[sec][0];
+      if (!a.querySelector(".nicon")) a.insertAdjacentHTML("afterbegin", `<span class="nicon" aria-hidden="true">${SECTIONS[sec][1]}</span>`);
+    });
+    const bar = document.getElementById("topbar");
+    if (bar && !document.getElementById("themebtn")) {
+      bar.insertAdjacentHTML("beforeend", `<div class="themewrap"><button id="themebtn" type="button" aria-haspopup="true" aria-expanded="false" title="Change theme">🎨 <span>Theme</span></button>
+        <div class="themepop" id="themepop" hidden><div class="small muted" style="margin-bottom:6px">Pick a theme</div>${pickerHtml()}</div></div>`);
+      const btn = document.getElementById("themebtn"), pop = document.getElementById("themepop");
+      btn.onclick = (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; btn.setAttribute("aria-expanded", String(!pop.hidden)); };
+      document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target)) { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); } });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) { pop.hidden = true; btn.focus(); } });
+      wirePicker(pop);
+    }
+  }
+  function pickerHtml() {
+    return `<div class="themegrid">${THEMES.map((t) => `<button type="button" class="themeopt" data-theme-id="${t.id}" title="${t.desc}">
+      <span class="tsw">${t.sw.map((c) => `<i style="background:${c}"></i>`).join("")}</span><span><strong>${t.name}</strong><br><span class="small muted">${t.desc}</span></span></button>`).join("")}</div>`;
+  }
+  function wirePicker(el) { el.querySelectorAll(".themeopt").forEach((b) => b.onclick = () => setTheme(b.dataset.themeId)); paintPickers(); }
+  function paintPickers() { document.querySelectorAll(".themeopt").forEach((b) => b.classList.toggle("on", b.dataset.themeId === saved())); }
+
+  // give subject, topic and course cards their subject's colour, and add a theme card to the Me page
+  function tintCards() {
+    const app = document.getElementById("app");
+    if (!app) return;
+    app.querySelectorAll('a.card[href^="#/subject/"], a.card[href^="#/topic/"], a.card[href^="#/code/"]').forEach((a) => {
+      const id = decodeURIComponent(a.getAttribute("href").split("/")[2] || "");
+      const h = hueOf(id);
+      if (h && a.dataset.hue !== h) { a.dataset.hue = h; a.classList.add("tint"); }
+    });
+    // cards that lead to another part of the site (Daily review, Due, Progress...) wear that part's colour
+    app.querySelectorAll('a.card[href^="#/"]:not([data-hue])').forEach((a) => {
+      const sec = ROUTE[a.getAttribute("href").replace(/^#\/?/, "").split("/")[0]];
+      if (sec && sec !== "subjects" && sec !== "coding") { a.dataset.hue = SECTIONS[sec][0]; a.classList.add("tint"); }
+    });
+    app.querySelectorAll('a.btn[href^="#/subject/"]').forEach((a) => { if (!a.dataset.hue) a.dataset.hue = hueOf(decodeURIComponent(a.getAttribute("href").split("/")[2] || "")); });
+    if (root.dataset.section === "settings" && parts()[0] === "settings" && !document.getElementById("themecard")) {
+      const anchor = app.querySelector(".card:nth-of-type(2)") || app.querySelector(".card");
+      if (anchor) {
+        anchor.insertAdjacentHTML("afterend", `<div class="card" id="themecard"><h2>🎨 Theme</h2><p class="muted small">Each part of the site has its own pastel colour so you always know where you are. Saved on this device.</p>${pickerHtml()}</div>`);
+        wirePicker(document.getElementById("themecard"));
+      }
+    }
+  }
+
+  let queued = false;
+  function refresh() {
+    if (queued) return; queued = true;
+    requestAnimationFrame(() => { queued = false; decorateNav(); markSection(); tintCards(); });
+  }
+  window.addEventListener("hashchange", refresh);
+  function start() {
+    refresh();
+    const app = document.getElementById("app");
+    if (app) new MutationObserver(refresh).observe(app, { childList: true, subtree: true });
+    // a back-to-top button for long notes and papers
+    document.body.insertAdjacentHTML("beforeend", '<button type="button" id="totop" title="Back to top" aria-label="Back to top" hidden>↑</button>');
+    const top = document.getElementById("totop");
+    top.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
+    window.addEventListener("scroll", () => { top.hidden = window.scrollY < 900; }, { passive: true });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+  window.rhTheme = { set: setTheme, get: saved, themes: THEMES.map((t) => t.id) };
+})();
+</script>
 </head>
 <body>
   <header class="topbar" id="topbar" hidden>
@@ -243,6 +494,7 @@ details.card > summary { cursor: pointer; }
       <a href="#/daily">Daily review</a>
       <a href="#/review">Due</a>
       <a href="#/plan">Timetable</a>
+      <a href="#/tools">Tools</a>
       <a href="#/progress">Progress</a>
       <a href="#/coding">Coding</a>
       <a href="#/exam-technique">Exam technique</a>
@@ -265,10 +517,10 @@ window.CLOUD_CONFIG = {
 "use strict";
 (function () {
   const KEY = "revisionHub.v1";
-  const TECHNIQUES = ["flashcards", "quiz", "spaced", "summary", "blurt", "exam", "lesson"];
+  const TECHNIQUES = ["flashcards", "quiz", "spaced", "summary", "blurt", "exam", "lesson", "teach"];
   const C = window.CONTENT;
   // Small per-user JSON stores: quiz questions to re-ask, timetable settings, timed papers, daily reviews.
-  const STORE_KEYS = ["qreview", "plan", "papers", "daily"];
+  const STORE_KEYS = ["qreview", "plan", "papers", "daily", "mistakes", "memory", "grades"];
 
   // Combined Science is the three sciences together (same as the server).
   const sci = ["biology", "chemistry", "physics"].map((s) => C.subjects[s]).filter(Boolean);
@@ -746,6 +998,7 @@ const TECH = {
   blurt: { name: "Blurting", icon: "✍️", desc: "Write down everything you remember, then see what you missed." },
   exam: { name: "Exam question", icon: "📝", desc: "Answer a real-style exam question and mark it with the mark scheme." },
   lesson: { name: "Handwritten lesson", icon: "🖊️", desc: "A lesson writes itself out like a teacher at the board. Pause it, speed it up, or ask about anything." },
+  teach: { name: "Teach it back", icon: "🧑‍🏫", desc: "Explain the topic from memory as if to a friend, then see what you missed and explain the gaps." },
 };
 const S = { user: null, profile: null, cat: null, setup: null, pyodide: null, store: {} };
 const app = () => document.getElementById("app");
@@ -1001,6 +1254,11 @@ async function route() {
       case "settings": return renderSettings();
       case "ask": return renderAsk();
       case "write": return await renderWrite(parts[1], parts[2]);
+      case "tools": return await renderTools();
+      case "mistakes": return await renderMistakes();
+      case "mix": return await renderMix();
+      case "grades": return await renderGrades();
+      case "memory": return await renderMemory(parts[1], parts[2]);
       default: return go("#/");
     }
   } catch (e) {
@@ -1728,6 +1986,7 @@ async function runStudy(sid, tid, tech) {
     }));
   }
   if (tech === "lesson") return finish(await new Promise((res) => runLesson(s, t, header, res)));
+  if (tech === "teach") return finish(await new Promise((res) => runTeach(s, t, header, res)));
 }
 
 // ------------------------------------------------------------------ handwritten lessons
@@ -2274,6 +2533,9 @@ async function renderWrite(sid, key) {
     wireMarking(q, { s, sid, tid: t.id, text, images,
       save: async (score) => {
         await api("POST", "/api/attempt", { kind: "subject", course: sid, topic: t.id, technique: "written", score });
+        const mref = `w:${sid}/${key}`;
+        if (score < 0.5) noteMistake({ kind: "written", ref: mref, sid, tid: t.id, q: q.q, wkey: key, marks: q.marks, got: Math.round(score * q.marks), markScheme: (q.markScheme || []).slice(0, 12), their: String(text || "").slice(0, 1500) });
+        else if (score >= 0.7) fixMistakeByKey(mref);
         $("#ms").innerHTML = `<div class="card center"><h2>Saved: ${Math.round(score * q.marks)}/${q.marks}</h2>
           <div class="row" style="justify-content:center"><a class="btn" href="#/write/${sid}/${encodeURIComponent(key)}" onclick="setTimeout(route)">Try it again</a><a class="btn primary" href="${back}">More questions</a></div></div>`;
       } });
@@ -2305,7 +2567,7 @@ async function renderWrite(sid, key) {
 
 // Typed answers: accept the answer (or any alternative in brackets or after "/" or " or ") when most of its key words are there.
 const NEEDS_OPTIONS = /\bwhich (of these|of the following|one|statement|option)\b|\b(true|false|all of the above|none of the above|both)\b|best describes|\bcorrect\b/i;
-function canType(q) { return !NEEDS_OPTIONS.test(q.q) && !NEEDS_OPTIONS.test(q.options[q.answer]) && q.options[q.answer].split(/\s+/).length <= 12; }
+function canType(q) { return !q.choiceOnly && !NEEDS_OPTIONS.test(q.q) && !NEEDS_OPTIONS.test(q.options[q.answer]) && q.options[q.answer].split(/\s+/).length <= 12; }
 function answerAlts(a) {
   const alts = [a, a.replace(/\s*\([^)]*\)/g, "")];
   (a.match(/\(([^)]+)\)/g) || []).forEach((m) => alts.push(m.slice(1, -1)));
@@ -2389,7 +2651,12 @@ function quizRunner(headerHtml, questions, done, opts = {}) {
           $("#aiexpl").innerHTML = `<div class="explain" style="margin-top:8px"><p>${aiText(a)}</p>${sourcesHtml(S.aiSources)}</div>`;
         } catch (e) { $("#aiexpl").innerHTML = `<p class="bad">${esc(e.message)}</p>`; xb.disabled = false; }
       };
-      $("#nq").onclick = () => { results.push({ q, correct: counted }); noteQuiz(q, counted); i++; show(); };
+      $("#nq").onclick = () => {
+        results.push({ q, correct: counted }); noteQuiz(q, counted);
+        if (counted && q.ref) fixMistakeByKey(q.ref);
+        if (!counted && !q.noMistake) noteMistake({ kind: "quiz", ref: q.ref, sid: q.sid, tid: q.tid, q: q.q, options: q.options, answer: q.answer, explain: q.explain || "", their: String(their ?? "") });
+        i++; show();
+      };
       $("#nq").focus();
     };
     if (typed) {
@@ -2837,7 +3104,7 @@ async function markPaper(s, sid, p, picks, texts, seconds, minutes) {
     wMarks.push(m); got += m;
     items.push({ sid, tid: q.tid, score: m / q.marks, weight: q.marks });
   }
-  const total = p.mc.length + p.written.reduce((a, q) => a + q.marks, 0), grade = gradeFor(got / total);
+  const total = p.mc.length + p.written.reduce((a, q) => a + q.marks, 0), grade = gradeForSubject(sid, got / total);
   await recordTopicScores(items, "paper", seconds);
   const papers = [...((await getStore("papers")) || []), { sid, date: Date.now(), got, total, grade, minutes, seconds }].slice(-100);
   await putStore("papers", papers);
@@ -2893,12 +3160,466 @@ async function renderProgress() {
     </div>`).join("") || '<div class="card"><p>Pick your subjects first.</p><a class="btn" href="#/setup/0">Choose subjects</a></div>'}`);
 }
 
+// ------------------------------------------------------------------ learning tools hub
+function subjName(sid) { return S.cat?.subjects?.find((c) => c.id === sid)?.name || sid || ""; }
+function topicName(sid, tid) { return S.cat?.subjects?.find((c) => c.id === sid)?.topics?.find((t) => t.id === tid)?.name || ""; }
+async function renderTools() {
+  const open = ((await getStore("mistakes")) || []).filter((m) => !m.fixed).length, mem = ((await getStore("memory")) || []).length;
+  const card = (href, icon, name, desc) => `<a class="card" style="text-decoration:none;color:inherit" href="${href}"><div style="font-size:1.6rem">${icon}</div><strong>${name}</strong><div class="small muted">${desc}</div></a>`;
+  view(`<h1>🧰 Learning tools</h1><p class="muted">Extra ways to revise that work across all your subjects.</p><div class="grid">
+    ${card("#/mistakes", "📓", "Mistake log", open ? `${open} mistake${open === 1 ? "" : "s"} to fix. Explain each one, then get it right to clear it.` : "Every question you get wrong lands here. Explain the mistake, then get it right to clear it.")}
+    ${card("#/mix", "🔀", "Mixed practice", "Questions from different topics shuffled together, and you name the topic first. Harder now, better in the exam.")}
+    ${card("#/memory", "🏰", "Memory maker", mem ? `${mem} saved. Mnemonics and memory palaces for lists, dates and vocab.` : "Turn a list (dates, key terms, vocab) into a mnemonic and a memory palace, then test yourself.")}
+    ${card("#/grades", "🎯", "Grade boundaries", "Real recent boundaries for your papers, and how many marks you need for a 7, 8 or 9.")}
+    ${card("#/subjects", "🧑‍🏫", "Teach it back", "On any topic, pick 'Teach it back': explain it as if to a friend and see what you missed.")}
+  </div>`);
+}
+
+// ------------------------------------------------------------------ mistake log
+// Wrong quiz answers and low-scoring written answers are logged. To clear one you explain the mistake
+// (and pick why it happened), then answer it again correctly.
+const MISTAKE_WHY = [["knew", "I didn't know it"], ["mixed", "Mixed it up with something else"], ["misread", "Misread the question"], ["slip", "Careless slip"], ["detail", "Not enough detail"], ["time", "Rushed it"]];
+let mistakeChain = Promise.resolve();
+function noteMistake(m) {
+  if (!S.user) return;
+  mistakeChain = mistakeChain.then(async () => {
+    const list = ((await getStore("mistakes")) || []).slice(), key = m.ref || `${m.sid}|${m.q}`;
+    const old = list.find((x) => x.key === key && !x.fixed);
+    if (old) Object.assign(old, { when: Date.now(), times: (old.times || 1) + 1, their: m.their ?? old.their, got: m.got ?? old.got });
+    else list.push({ ...m, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key, when: Date.now(), times: 1, fixed: 0 });
+    const openOnes = list.filter((x) => !x.fixed).slice(-300), fixed = list.filter((x) => x.fixed).sort((a, b) => a.fixed - b.fixed).slice(-100);
+    await putStore("mistakes", [...openOnes, ...fixed]);
+  }).catch(() => {});
+}
+function fixMistakeByKey(key) {
+  if (!S.user) return;
+  mistakeChain = mistakeChain.then(async () => {
+    const list = (await getStore("mistakes")) || [];
+    if (!list.some((x) => x.key === key && !x.fixed)) return;
+    await putStore("mistakes", list.map((x) => x.key === key && !x.fixed ? { ...x, fixed: Date.now() } : x));
+  }).catch(() => {});
+}
+async function renderMistakes(filter = "") {
+  await mistakeChain;
+  const all = (await getStore("mistakes")) || [], open = all.filter((m) => !m.fixed && (!filter || m.sid === filter)).sort((a, b) => b.when - a.when);
+  const fixed = all.filter((m) => m.fixed && (!filter || m.sid === filter)).sort((a, b) => b.fixed - a.fixed);
+  const why = {};
+  all.filter((m) => m.why).forEach((m) => (why[m.why] = (why[m.why] || 0) + 1));
+  const whyTotal = Object.values(why).reduce((a, b) => a + b, 0), top = Object.entries(why).sort((a, b) => b[1] - a[1])[0];
+  const subs = [...new Set(all.filter((m) => !m.fixed).map((m) => m.sid))];
+  const answerOf = (m) => m.kind === "quiz" ? m.options?.[m.answer] : null;
+  const item = (m) => `<div class="card mistake" data-id="${m.id}">
+      <div class="small muted">${esc(subjName(m.sid))}${m.tid ? ` · ${esc(topicName(m.sid, m.tid))}` : ""}${m.times > 1 ? ` · wrong ${m.times} times` : ""}</div>
+      <p class="qtext"><strong>${esc(m.q.length > 400 ? m.q.slice(0, 397) + "…" : m.q)}</strong></p>
+      ${m.kind === "quiz" ? `<p>❌ You said: ${esc(m.their || "(blank)")}<br>✅ Answer: <strong>${esc(answerOf(m))}</strong></p>${m.explain ? `<p class="small muted">${esc(m.explain)}</p>` : ""}`
+        : `<p>You got ${m.got ?? 0}/${m.marks} marks.</p><details><summary>Mark scheme</summary><ul class="ul-tight">${(m.markScheme || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>`}
+      ${m.note ? `<div class="explain"><strong>Your explanation${m.why ? ` (${esc(MISTAKE_WHY.find(([k]) => k === m.why)?.[1] || "")})` : ""}:</strong> ${esc(m.note)}</div>
+          <div class="row" style="margin-top:8px">${m.kind === "quiz" ? `<button class="primary" data-retry="${m.id}">Try it again to clear it</button>`
+            : `<a class="btn primary" href="#/write/${m.sid}/${encodeURIComponent(m.wkey)}">Answer it again</a><span class="small muted">Score 70% or more to clear it.</span>`}
+          <button data-renote="${m.id}">Change explanation</button></div><div class="retry"></div>`
+        : `<div class="whyrow">${MISTAKE_WHY.map(([k, l]) => `<label class="chip"><input type="radio" name="why-${m.id}" value="${k}"> ${l}</label>`).join("")}</div>
+          <textarea rows="3" data-note="${m.id}" placeholder="In your own words: what was wrong, and why is the right answer right?"></textarea>
+          <div class="row spread"><span class="small muted" data-wc="${m.id}">Write at least 8 words.</span><button class="primary" data-save="${m.id}" disabled>Save my explanation</button></div>`}
+    </div>`;
+  view(`<h1>📓 Mistake log</h1>
+    <p class="muted">Every quiz question you get wrong, and written answers under half marks, land here. To clear one, explain the mistake in your own words, then get it right.</p>
+    <div class="row spread"><div class="row"><span class="pill big">${all.filter((m) => !m.fixed).length} to fix</span><span class="pill big good">${all.filter((m) => m.fixed).length} cleared</span></div>
+      ${subs.length > 1 ? `<select id="mfilter" aria-label="Subject"><option value="">All subjects</option>${subs.map((s) => `<option value="${s}"${s === filter ? " selected" : ""}>${esc(subjName(s))}</option>`).join("")}</select>` : ""}</div>
+    ${whyTotal >= 3 ? `<div class="card"><h3>Why you lose marks</h3>${MISTAKE_WHY.filter(([k]) => why[k]).map(([k, l]) => `<div class="tech-row wide"><span>${l}</span><div class="bar"><span style="width:${(why[k] / whyTotal) * 100}%"></span></div><span class="small muted">${why[k]}</span></div>`).join("")}
+      <p class="small">${{ misread: "Most of yours are misreading. Underline the command word and key words before you answer.", slip: "Most of yours are careless slips. Leave a few minutes to check, and re-read each answer against the question.", detail: "Most of yours lack detail. Check the marks: one point per mark, and explain each one.", time: "Most of yours are rushed. Practise timed papers and keep to about a mark a minute.", mixed: "You often mix things up. Mixed practice helps you tell similar ideas apart.", knew: "Most are gaps in what you know. Revise those topics first: the notes and flashcards are the quickest fix." }[top[0]]}</p></div>` : ""}
+    ${open.length ? open.slice(0, 60).map(item).join("") : `<div class="card"><p>🎉 Nothing to fix${filter ? " in this subject" : ""}. Wrong answers from quizzes, reviews and written questions will show up here.</p></div>`}
+    ${open.length > 60 ? `<p class="muted small">Showing the newest 60 of ${open.length}.</p>` : ""}
+    ${fixed.length ? `<details class="card"><summary><strong>Cleared (${fixed.length})</strong></summary>${fixed.slice(0, 50).map((m) => `<div class="topic-line"><div><div class="small muted">${esc(subjName(m.sid))}</div>${esc(m.q.slice(0, 160))}</div><span class="pill good">cleared</span></div>`).join("")}</details>` : ""}`);
+  if ($("#mfilter")) $("#mfilter").onchange = () => renderMistakes($("#mfilter").value);
+  const update = async (id, patch) => {
+    const list = (await getStore("mistakes")) || [];
+    await putStore("mistakes", list.map((x) => x.id === id ? { ...x, ...patch } : x));
+  };
+  $$("[data-note]").forEach((ta) => {
+    const id = ta.dataset.note, btn = $(`[data-save="${id}"]`), wc = $(`[data-wc="${id}"]`);
+    const ok = () => { const n = words(ta.value).length, picked = !!$(`[name="why-${id}"]:checked`); btn.disabled = n < 8 || !picked; wc.textContent = n < 8 ? `Write at least 8 words (${n} so far).` : picked ? "Ready." : "Now pick why it happened."; };
+    ta.oninput = ok; $$(`[name="why-${id}"]`).forEach((r) => (r.onchange = ok));
+    btn.onclick = async () => { await update(id, { note: ta.value.trim(), why: $(`[name="why-${id}"]:checked`).value }); renderMistakes(filter); };
+  });
+  $$("[data-renote]").forEach((b) => (b.onclick = async () => { await update(b.dataset.renote, { note: "" }); renderMistakes(filter); }));
+  $$("[data-retry]").forEach((b) => (b.onclick = () => {
+    const m = all.find((x) => x.id === b.dataset.retry), box = b.closest(".mistake").querySelector(".retry");
+    b.disabled = true;
+    box.innerHTML = `<div style="margin-top:10px">${shuffle(m.options.map((o, i) => i)).map((i) => `<button class="opt" data-pick="${i}">${esc(m.options[i])}</button>`).join("")}</div>`;
+    $$("[data-pick]", box).forEach((o) => (o.onclick = async () => {
+      if (+o.dataset.pick === m.answer) {
+        await update(m.id, { fixed: Date.now() });
+        box.innerHTML = '<p class="good">✅ Right. Cleared!</p>';
+        setTimeout(() => renderMistakes(filter), 900);
+      } else {
+        await update(m.id, { times: (m.times || 1) + 1, note: "", their: m.options[+o.dataset.pick] });
+        box.innerHTML = '<p class="bad">❌ Still not right. Look at the answer again and rewrite your explanation.</p>';
+        setTimeout(() => renderMistakes(filter), 1600);
+      }
+    }));
+  }));
+}
+
+// ------------------------------------------------------------------ teach it back
+// The Feynman technique: explain the topic in your own words as if to a friend who missed it, then see
+// which key ideas you left out, and explain those too.
+function teachCheck(t, text) {
+  const low = text.toLowerCase(), tw = words(text);
+  const hits = t.keyPoints.map((k) => k.split("|").some((alt) => low.includes(alt.toLowerCase().trim())));
+  const covered = t.summary.map((p) => { const kw = keyWords(p).filter((w) => w.length > 3); return kw.length ? kw.filter((w) => wordHit(w, tw)).length / kw.length : 1; });
+  const score = 0.6 * hits.filter(Boolean).length / Math.max(1, hits.length) + 0.4 * covered.filter((c) => c >= 0.34).length / Math.max(1, covered.length);
+  return { hits, covered, score };
+}
+function runTeach(s, t, header, done) {
+  let round = 1, first = null, text1 = "";
+  const draw = () => {
+    view(`${header("Explain it out loud in writing, from memory, as if to a friend who missed every lesson. No notes!")}
+      <div class="card">${round === 1 ? `<p>Explain <strong>${esc(t.name)}</strong> to a friend: what it is, the key facts and words, and why it matters. Use full sentences, and give an example if you can.</p>`
+        : `<p>Your friend still has questions. Explain the gaps below in your own words.</p>`}
+        <textarea id="teach" rows="10" placeholder="${round === 1 ? "So basically…" : "The bits I missed…"}"></textarea>
+        <div class="row spread"><span class="small muted" id="twc">0 words</span><button class="primary" id="tcheck">${round === 1 ? "I've explained it" : "Check again"}</button></div></div>
+      <div id="tres"></div>`);
+    $("#teach").oninput = () => ($("#twc").textContent = `${words($("#teach").value).length} words`);
+    $("#tcheck").onclick = () => {
+      const txt = $("#teach").value;
+      if (words(txt).length < 15 && !confirm("That's quite short. Check it anyway?")) return;
+      const all = round === 1 ? txt : text1 + "\n" + txt, r = teachCheck(t, all);
+      if (round === 1) { first = r; text1 = txt; }
+      $("#tcheck").disabled = true; $("#teach").readOnly = true;
+      const got = r.hits.filter(Boolean).length, missed = t.summary.filter((_, i) => r.covered[i] < 0.34);
+      $("#tres").innerHTML = `<div class="card"><h3>${round === 1 ? `You explained ${got} of ${t.keyPoints.length} key ideas` : `Now ${got} of ${t.keyPoints.length} key ideas (up from ${first.hits.filter(Boolean).length})`}</h3>
+        <div class="teachgrid"><div><h4>✅ Your friend now knows</h4><ul class="ul-tight">${t.keyPoints.filter((_, i) => r.hits[i]).map((k) => `<li>${esc(k.split("|")[0])}</li>`).join("") || "<li>Not much yet</li>"}</ul></div>
+          <div><h4>❓ They'd still ask about</h4><ul class="ul-tight">${t.keyPoints.filter((_, i) => !r.hits[i]).map((k) => `<li>${esc(k.split("|")[0])}</li>`).join("") || "<li>Nothing: great explaining!</li>"}</ul></div></div>
+        ${missed.length ? `<h4>Points you didn't explain</h4><ul class="ul-tight">${missed.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
+        ${aiOn() ? `<div id="taibox"><button id="tai">🤖 Get feedback from ${esc(aiName())}</button></div>` : ""}
+        <div class="row" style="margin-top:12px">${round === 1 && (missed.length || got < t.keyPoints.length) ? '<button class="primary" id="tagain">Explain the gaps</button><button id="tdone">Finish</button>' : '<button class="primary" id="tdone">Continue</button>'}</div></div>`;
+      $("#tdone").onclick = () => done(r.score);
+      if ($("#tagain")) $("#tagain").onclick = () => { round = 2; draw(); };
+      if ($("#tai")) $("#tai").onclick = () => teachAi(s, t, all);
+    };
+  };
+  draw();
+}
+async function teachAi(s, t, text) {
+  const box = $("#taibox");
+  box.innerHTML = '<p class="muted">Reading your explanation…</p>';
+  const board = mySubject(s.id)?.board || "";
+  try {
+    const r = await aiCall(AI_SYSTEM + " You are a friendly classmate who missed the lessons, listening to the student explain a topic to you.",
+      `Subject: ${s.name}${board ? ` (${board})` : ""}. Topic: ${t.name}.\nKey notes for checking:\n${t.summary.join("\n")}\n\nThe student's explanation:\n${text}\n\n` +
+      "Give honest feedback: what they explained well, anything that is wrong or confused (with the correct version), what important ideas are missing, and one follow-up question a curious friend would ask to test real understanding.",
+      { type: "object", additionalProperties: false, required: ["good", "wrong", "missing", "question"], properties: {
+        good: { type: "array", items: { type: "string" }, description: "Up to 3 things explained well" },
+        wrong: { type: "array", items: { type: "string" }, description: "Mistakes or confusions, each with the correct version; empty if none" },
+        missing: { type: "array", items: { type: "string" }, description: "Up to 4 important ideas left out" },
+        question: { type: "string", description: "One 'but why…?' follow-up question" } } }, null, { query: t.name, sid: s.id, tid: t.id });
+    const list = (xs) => xs.length ? `<ul class="ul-tight">${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "<p class=\"small muted\">None.</p>";
+    box.innerHTML = `<div class="explain" style="margin-top:10px"><h4>👍 Good</h4>${list(r.good)}<h4>⚠️ Not quite right</h4>${list(r.wrong)}<h4>➕ Missing</h4>${list(r.missing)}
+      <h4>🙋 Your friend asks: ${esc(r.question)}</h4><textarea id="tfq" rows="3" placeholder="Your answer…"></textarea><button id="tfqgo" style="margin-top:6px">Answer</button><div id="tfqa"></div>
+      <p class="small muted">Feedback from ${esc(aiName())}: AI can get things wrong.</p></div>`;
+    $("#tfqgo").onclick = async () => {
+      const a = $("#tfq").value.trim();
+      if (!a) return;
+      $("#tfqgo").disabled = true; $("#tfqa").innerHTML = '<p class="muted">Thinking…</p>';
+      try {
+        const reply = await aiCall(AI_SYSTEM, `Topic: ${t.name}. A classmate asked: ${r.question}\nThe student answered: ${a}\n\nSay in under 80 words whether that's right, and correct or add to it if needed.`, null, null, { query: r.question, sid: s.id, tid: t.id });
+        $("#tfqa").innerHTML = `<p>${aiText(reply)}</p>`;
+      } catch (e) { $("#tfqa").innerHTML = `<p class="bad">${esc(e.message)}</p>`; $("#tfqgo").disabled = false; }
+    };
+  } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; }
+}
+
+// ------------------------------------------------------------------ interleaved (mixed-topic) practice
+// Questions from several topics are shuffled so no two in a row share a topic. With "name the topic first",
+// each question starts by asking which topic it's from: spotting what a question is about is half the battle in an exam.
+async function renderMix() {
+  const subs = S.profile.subjects || [];
+  if (!subs.length) return view(`<h1>🔀 Mixed practice</h1><div class="card"><p>Pick your subjects first.</p><a class="btn primary" href="#/setup/0">Choose subjects</a></div>`);
+  view(`<h1>🔀 Mixed practice</h1>
+    <div class="card"><p>Doing one topic at a time feels easier, but in the exam the questions come mixed up. Here questions from different topics are shuffled together, so you have to work out what each one is about before you answer it. It feels harder, and that's why it works.</p>
+      <label>Subjects</label><div class="row">${subs.map((x, i) => `<label class="check"><input type="checkbox" data-ms="${x.id}"${i === 0 ? " checked" : ""}> ${esc(subjName(x.id))}</label>`).join("")}</div>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="mcov" checked> Only topics I've covered</label>
+      <label class="check"><input type="checkbox" id="mspot" checked> Name the topic first, then answer</label>
+      <label style="margin-top:8px" for="mn">How many questions?</label><select id="mn"><option>10</option><option selected>16</option><option>24</option></select>
+      <button class="primary" id="mgo" style="margin-top:12px">Start</button></div>`);
+  $("#mgo").onclick = async () => {
+    const chosen = $$("[data-ms]:checked").map((c) => c.dataset.ms), n = +$("#mn").value, spot = $("#mspot").checked;
+    if (!chosen.length) return alert("Pick at least one subject.");
+    $("#mgo").disabled = true;
+    const pools = [];
+    for (const sid of chosen) {
+      const s = await getSubject(sid), mine = mySubject(sid);
+      let topics = s.topics.filter((t) => topicOnBoard(t, mine?.board) && t.quiz?.length);
+      if ($("#mcov").checked && mine?.topicsDone?.length) topics = topics.filter((t) => mine.topicsDone.includes(t.id));
+      topics.forEach((t) => pools.push({ sid, s, t, qs: shuffle(quizWithRefs(sid, t)) }));
+    }
+    if (pools.length < 2) { $("#mgo").disabled = false; return alert("Mixed practice needs at least two topics. Untick 'Only topics I've covered', or add another subject."); }
+    const order = [];
+    let last = null, guard = 0;
+    while (order.length < n && guard++ < n * 20) {
+      const choices = shuffle(pools.filter((p) => p.qs.length && p !== last));
+      if (!choices.length) break;
+      const p = choices[0];
+      order.push({ ...p.qs.shift(), label: `${p.s.name}`, _pool: p });
+      last = p;
+    }
+    const qs = [];
+    order.forEach((q) => {
+      const p = q._pool;
+      delete q._pool;
+      if (spot) {
+        const same = pools.filter((x) => x.sid === p.sid && x !== p), others = shuffle(same.length >= 2 ? same : pools.filter((x) => x !== p)).slice(0, 3);
+        const opts = shuffle([p, ...others]);
+        qs.push({ q: `Which topic is this question from?\n\n"${q.q}"`, options: opts.map((x) => x.sid === p.sid ? x.t.name : `${x.s.name}: ${x.t.name}`), answer: opts.indexOf(p),
+          explain: `It's from ${p.t.name}.`, label: "Spot the topic", choiceOnly: true, noMistake: true, spot: true });
+      }
+      qs.push(q);
+    });
+    const started = Date.now(), header = `<h1>🔀 Mixed practice</h1>`;
+    quizRunner(header, qs, async (score, results) => {
+      const real = results.filter((r) => !r.q.spot), spots = results.filter((r) => r.q.spot);
+      await recordTopicScores(quizItems(real), "mix", (Date.now() - started) / 1000);
+      const right = real.filter((r) => r.correct).length, sRight = spots.filter((r) => r.correct).length;
+      const byTopic = {};
+      real.forEach((r) => { const k = `${subjName(r.q.sid)}: ${topicName(r.q.sid, r.q.tid)}`, b = (byTopic[k] ||= [0, 0]); b[0] += r.correct ? 1 : 0; b[1]++; });
+      view(`${header}<div class="card center"><h2>${right} of ${real.length} right</h2>${spots.length ? `<p>You named the topic correctly ${sRight} of ${spots.length} times.</p>` : ""}
+        <p class="muted">${spots.length && sRight < spots.length ? "Topics you couldn't spot are ones to revise side by side, so you can tell them apart." : "Wrong answers go to your Due list and Mistake log."}</p></div>
+        <div class="card"><h3>By topic</h3>${Object.entries(byTopic).map(([k, [r, t]]) => `<div class="tech-row wide"><span>${esc(k)}</span><div class="bar"><span style="width:${(r / t) * 100}%"></span></div><span class="small muted">${r}/${t}</span></div>`).join("")}</div>
+        <div class="row" style="justify-content:center"><a class="btn" href="#/mix" onclick="setTimeout(route)">Another round</a><a class="btn primary" href="#/tools">Learning tools</a></div>`);
+    });
+  };
+}
+
+// ------------------------------------------------------------------ grade boundaries
+// content/grade-boundaries.json: official boundaries copied from the boards' documents, attached to each subject.
+function gbSets(s, board) {
+  const all = s.gradeBoundaries || [];
+  const mine = board ? all.filter((g) => g.boards?.includes(board)) : all;
+  return mine.length ? mine : [];
+}
+function gradeFromBoundaries(g, marks) {
+  for (const k of Object.keys(g.grades).sort((a, b) => b - a)) if (marks >= g.grades[k]) return k;
+  return "U";
+}
+// A timed-paper percentage turned into a grade on the subject's latest real boundaries, if we have them.
+function gradeForSubject(sid, p) {
+  const s = subjCache[sid], g = s && gbSets(s, mySubject(sid)?.board)[0];
+  return g ? gradeFromBoundaries(g, p * g.max) : gradeFor(p);
+}
+async function renderGrades() {
+  const subs = S.profile.subjects || [], saved = (await getStore("grades")) || {}, papers = (await getStore("papers")) || [];
+  const cards = [];
+  for (const x of subs) {
+    const s = await getSubject(x.id), sets = gbSets(s, x.board);
+    const mine = papers.filter((p) => p.sid === x.id).slice(-3), avg = mine.length ? mean(mine.map((p) => p.got / p.total)) : null;
+    if (!sets.length) {
+      cards.push(`<div class="card"><h2>${s.icon || ""} ${esc(s.name)}</h2><p class="muted">No official boundaries recorded for ${esc(x.board || "your board")} yet. Look on your exam board's website under grade boundaries.</p></div>`);
+      continue;
+    }
+    const routes = [...new Set(sets.map((g) => g.route || ""))];
+    const pick = saved[x.id] || {}, route = routes.includes(pick.route) ? pick.route : routes[0];
+    const rs = sets.filter((g) => (g.route || "") === route), series = rs.find((g) => g.series === pick.series) || rs[0];
+    cards.push(`<div class="card gb" data-sid="${x.id}"><div class="row spread"><h2 style="margin:0">${s.icon || ""} ${esc(s.name)}</h2>
+        <div class="row">${routes.length > 1 ? `<select data-route aria-label="Route">${routes.map((r) => `<option${r === route ? " selected" : ""}>${esc(r)}</option>`).join("")}</select>` : ""}
+        <select data-series aria-label="Exam series">${rs.map((g) => `<option${g === series ? " selected" : ""}>${esc(g.series)}</option>`).join("")}</select></div></div>
+      <p class="small muted">${esc(series.qualification)}${series.route ? `, ${esc(series.route)}` : ""}. Official boundaries, out of ${series.max} marks. <a href="${esc(series.source)}" target="_blank" rel="noopener">Source</a></p>
+      <div class="gbrow">${Object.keys(series.grades).sort((a, b) => b - a).map((k) => `<div class="gbcell${["9", "8", "7"].includes(k) ? " hi" : ""}"><div class="gbg">${esc(k)}</div><div>${series.grades[k]}</div><div class="small muted">${Math.round(series.grades[k] / series.max * 100)}%</div></div>`).join("")}</div>
+      ${series.papers?.length ? `<details><summary class="small">Per paper</summary><table class="gbt"><tr><th>Paper</th><th>Max</th>${Object.keys(series.papers[0].grades).sort((a, b) => b - a).map((k) => `<th>${esc(k)}</th>`).join("")}</tr>
+        ${series.papers.map((p) => `<tr><td>${esc(p.name)}</td><td>${p.max}</td>${Object.keys(series.papers[0].grades).sort((a, b) => b - a).map((k) => `<td>${p.grades[k] ?? "–"}</td>`).join("")}</tr>`).join("")}</table></details>` : ""}
+      ${series.notes ? `<p class="small muted">${esc(series.notes)}</p>` : ""}
+      <div class="row" style="margin-top:10px"><label for="gm-${x.id}">My mark (from a past paper or mock):</label>
+        <input id="gm-${x.id}" data-mark type="number" min="0" max="${series.max}" style="width:7em" value="${pick.mark ?? ""}"> <span class="muted">/ ${series.max}</span>
+        ${avg != null ? `<button data-useavg="${Math.round(avg * series.max)}">Use my timed papers (${pct(avg)})</button>` : ""}</div>
+      <div data-out></div></div>`);
+  }
+  view(`<h1>🎯 Grade boundaries</h1><p class="muted">Real boundaries from recent exams, so you can see how many marks a 7, 8 or 9 takes. They move a little every year, so treat them as a target, not a promise.</p>${cards.join("")}`);
+  const save = async (sid, patch) => { const g = { ...((await getStore("grades")) || {}) }; g[sid] = { ...(g[sid] || {}), ...patch }; await putStore("grades", g); };
+  $$(".gb").forEach((card) => {
+    const sid = card.dataset.sid, s = subjCache[sid], sets = gbSets(s, mySubject(sid)?.board);
+    const cur = () => { const route = card.querySelector("[data-route]")?.value ?? (sets[0].route || ""); return sets.find((g) => (g.route || "") === route && g.series === card.querySelector("[data-series]").value) || sets.find((g) => (g.route || "") === route); };
+    const show = () => {
+      const g = cur(), v = card.querySelector("[data-mark]").value, out = card.querySelector("[data-out]");
+      if (v === "") { out.innerHTML = ""; return; }
+      const m = +v, grade = gradeFromBoundaries(g, m), ks = Object.keys(g.grades).sort((a, b) => a - b), next = ks.find((k) => g.grades[k] > m);
+      out.innerHTML = `<div class="explain" style="margin-top:10px">That's a <strong>grade ${esc(grade)}</strong> on the ${esc(g.series)} boundaries.
+        ${next ? ` You need <strong>${g.grades[next] - m} more mark${g.grades[next] - m === 1 ? "" : "s"}</strong> for a ${esc(next)}.` : " That's the top grade. 🎉"}
+        ${["7", "8", "9"].filter((k) => g.grades[k] > m && k !== next).map((k) => ` ${g.grades[k] - m} more for a ${k}.`).join("")}</div>`;
+    };
+    card.querySelectorAll("[data-route],[data-series]").forEach((el) => (el.onchange = async () => { await save(sid, { route: card.querySelector("[data-route]")?.value ?? "", series: el.matches("[data-series]") ? el.value : "" }); renderGrades(); }));
+    const mk = card.querySelector("[data-mark]");
+    mk.oninput = () => { show(); save(sid, { mark: mk.value === "" ? null : +mk.value }); };
+    const ua = card.querySelector("[data-useavg]");
+    if (ua) ua.onclick = () => { mk.value = ua.dataset.useavg; mk.oninput(); };
+    show();
+  });
+}
+
+// ------------------------------------------------------------------ memory maker: mnemonics and memory palaces
+const PALACES = {
+  house: ["Front door", "Doormat", "Hallway mirror", "Stairs", "Living room sofa", "TV", "Kitchen table", "Fridge", "Sink", "Bathroom", "Your bed", "Wardrobe", "Window", "Garden"],
+  school: ["School gate", "Reception desk", "Main corridor", "Lockers", "Classroom door", "Your desk", "Whiteboard", "Science lab", "Library", "Dining hall", "Sports hall", "Playing field", "Chapel", "Bus stop"],
+  route: ["Your front door", "End of your road", "Corner shop", "Traffic lights", "Bus stop", "Park bench", "Bridge", "Church", "Petrol station", "Roundabout", "School sign", "School gate"],
+};
+const PALACE_NAMES = [["house", "My home"], ["school", "My school"], ["route", "My way to school"], ["custom", "Somewhere else (type the places)"]];
+const IMAGE_TEMPLATES = [
+  "a giant {x} is blocking it, flashing bright red and blaring like an alarm",
+  "{x} is dancing on top of it, singing really badly",
+  "it's been completely covered in sticky {x}, and it smells awful",
+  "a tiny {x} is shouting your name from it in a squeaky voice",
+  "{x} has exploded all over it in a shower of glitter",
+  "your teacher is standing on it, juggling {x}",
+  "a huge {x} is fast asleep on it, snoring loudly",
+  "{x} is spinning round and round on it like a disco ball",
+  "it has turned into {x}, and it's wobbling like jelly",
+  "a gorilla is eating {x} off it, very noisily",
+  "{x} is painted on it in enormous neon letters",
+  "{x} is on fire there (safely!), crackling and glowing blue",
+];
+const MNEMO_WORDS = { a: ["Angry", "Aunties", "Always"], b: ["Big", "Bananas", "Bounce"], c: ["Crazy", "Cats", "Cook"], d: ["Dancing", "Dragons", "Drink"], e: ["Every", "Elephants", "Eat"], f: ["Funny", "Frogs", "Fly"], g: ["Giant", "Goats", "Giggle"], h: ["Happy", "Hamsters", "Hop"], i: ["Icy", "Igloos", "Itch"], j: ["Jolly", "Jellyfish", "Juggle"], k: ["Kind", "Kangaroos", "Kick"], l: ["Lazy", "Llamas", "Laugh"], m: ["Mad", "Monkeys", "Munch"], n: ["Noisy", "Ninjas", "Nap"], o: ["Old", "Owls", "Order"], p: ["Purple", "Penguins", "Play"], q: ["Quiet", "Queens", "Quack"], r: ["Red", "Rabbits", "Run"], s: ["Silly", "Snakes", "Sing"], t: ["Tiny", "Tigers", "Talk"], u: ["Ugly", "Unicorns", "Untie"], v: ["Very", "Vampires", "Vanish"], w: ["Wild", "Wizards", "Wobble"], x: ["Xtra", "X-rays", "Xerox"], y: ["Yellow", "Yaks", "Yell"], z: ["Zany", "Zebras", "Zoom"] };
+function firstLetter(it) { const w = keyWords(it.replace(/^\d{3,4}s?\s*[-–:]\s*/, "")); return (w[0] || words(it)[0] || "?")[0]; }
+function makeMnemonic(items) {
+  const letters = items.map(firstLetter);
+  const sentence = letters.map((l, i) => { const ws = MNEMO_WORDS[l]; return ws ? ws[i % 3 === 0 ? 0 : i % 3 === 1 ? 1 : 2] : l.toUpperCase(); }).join(" ");
+  return { acronym: letters.join("").toUpperCase(), sentence };
+}
+function makeImages(items, loci) {
+  const t = shuffle(IMAGE_TEMPLATES);
+  return items.map((it, i) => `At the ${(loci[i % loci.length] || "next place").toLowerCase()}, ${t[i % t.length].replace("{x}", it.replace(/^\d{3,4}s?\s*[-–:]\s*/, "").slice(0, 80))}.`);
+}
+async function memTopicItems(sid, tid, kind) {
+  const s = await getSubject(sid), t = s.topics.find((x) => x.id === tid);
+  if (!t) return [];
+  if (kind === "timeline") return timelineOf(t.summary).map((r) => `${r.label}: ${r.line}`).slice(0, 14);
+  if (kind === "cards") return t.flashcards.map((c) => c.a).filter((a) => a.length < 90).slice(0, 12);
+  return t.keyPoints.map((k) => k.split("|")[0]);
+}
+async function renderMemory(id, mode) {
+  const list = (await getStore("memory")) || [];
+  if (id === "new" || !id) return id === "new" ? memEditor() : memList(list);
+  const m = list.find((x) => x.id === id);
+  if (!m) return go("#/memory");
+  return mode === "test" ? memTest(m) : memView(m);
+}
+function memList(list) {
+  view(`<h1>🏰 Memory maker</h1>
+    <div class="card"><p>Lists are hard to remember: causes of a war, dates, the stages of a process, French vocab. Two tricks help:</p>
+      <ul class="ul-tight"><li><strong>Mnemonic</strong>: the first letters become a silly sentence (like "My Very Easy Method Just Speeds Up Naming" for the planets).</li>
+      <li><strong>Memory palace</strong>: you picture each item, in a vivid and strange way, at a place you know well, in order. To remember, walk through the place in your head.</li></ul>
+      <a class="btn primary" href="#/memory/new">Make a new one</a></div>
+    ${list.length ? `<h2>Yours</h2>${list.slice().reverse().map((m) => { const last = m.tests?.[m.tests.length - 1]; return `<div class="topic-line"><div><a href="#/memory/${m.id}"><strong>${esc(m.title)}</strong></a>
+      <div class="small muted">${m.items.length} items${last ? ` · last test ${Math.round(last.score * 100)}%` : ""}</div></div><div class="row"><a class="btn" href="#/memory/${m.id}">Study</a><a class="btn primary" href="#/memory/${m.id}/test">Test me</a></div></div>`; }).join("")}` : ""}`);
+}
+function memEditor() {
+  const subs = S.profile.subjects || [];
+  view(`<p><a href="#/memory">← Memory maker</a></p><h1>New memory set</h1>
+    <div class="card"><label for="mt">Name</label><input id="mt" placeholder="e.g. Causes of the 1905 Revolution">
+      <label for="mi" style="margin-top:10px">The list to learn, one item per line, in order</label><textarea id="mi" rows="8" placeholder="Bloody Sunday&#10;Defeat by Japan&#10;Poor working conditions&#10;…"></textarea>
+      <details style="margin-top:8px"><summary>Or fill it from one of your topics</summary>
+        <div class="row" style="margin-top:8px"><select id="msub" aria-label="Subject"><option value="">Subject…</option>${subs.map((x) => `<option value="${x.id}">${esc(subjName(x.id))}</option>`).join("")}</select>
+        <select id="mtop" aria-label="Topic" disabled><option>Topic…</option></select>
+        <select id="mkind" aria-label="What to learn"><option value="terms">Key terms</option><option value="timeline">Timeline (dates)</option><option value="cards">Flashcard answers</option></select>
+        <button id="mfill">Fill</button></div></details>
+      <label for="mp" style="margin-top:10px">Memory palace: a place you know really well</label>
+      <select id="mp">${PALACE_NAMES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select>
+      <textarea id="mloci" rows="4" style="margin-top:6px" hidden placeholder="One place per line, in the order you'd walk through it"></textarea>
+      <button class="primary" id="mmake" style="margin-top:12px">Make it</button></div><div id="mout"></div>`);
+  $("#mp").onchange = () => ($("#mloci").hidden = $("#mp").value !== "custom");
+  $("#msub").onchange = async () => {
+    const sid = $("#msub").value;
+    if (!sid) return;
+    const s = await getSubject(sid), board = mySubject(sid)?.board;
+    $("#mtop").innerHTML = s.topics.filter((t) => topicOnBoard(t, board)).map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+    $("#mtop").disabled = false;
+  };
+  $("#mfill").onclick = async () => {
+    const sid = $("#msub").value, tid = $("#mtop").value;
+    if (!sid || !tid) return;
+    const items = await memTopicItems(sid, tid, $("#mkind").value);
+    if (!items.length) return alert("That topic doesn't have any of those. Try key terms.");
+    $("#mi").value = items.join("\n");
+    if (!$("#mt").value) $("#mt").value = `${topicName(sid, tid)}: ${$("#mkind").selectedOptions[0].text.toLowerCase()}`;
+  };
+  $("#mmake").onclick = () => {
+    const items = $("#mi").value.split("\n").map((x) => x.trim()).filter(Boolean).slice(0, 20);
+    if (items.length < 2) return alert("Add at least two items, one per line.");
+    const loci = $("#mp").value === "custom" ? $("#mloci").value.split("\n").map((x) => x.trim()).filter(Boolean) : PALACES[$("#mp").value];
+    if (!loci.length) return alert("Type the places in your memory palace, one per line.");
+    const m = { id: Date.now().toString(36), title: $("#mt").value.trim() || items.slice(0, 3).join(", "), items, loci: items.map((_, i) => loci[i % loci.length]), ...makeMnemonic(items), images: makeImages(items, loci), created: Date.now(), tests: [] };
+    memDraft(m);
+  };
+}
+function memDraft(m) {
+  $("#mout").innerHTML = `<div class="card"><h2>Your mnemonic</h2><p class="big-mnemo">${esc(m.acronym)}</p>
+      <label for="msent">Sentence (change it to something funnier or more personal: that makes it stick)</label><input id="msent" value="${esc(m.sentence)}">
+      <h2 style="margin-top:16px">Your memory palace</h2><p class="small muted">Picture each scene for a few seconds: the sillier, louder and more colourful, the better. Edit any that don't work for you.</p>
+      ${m.items.map((it, i) => `<div class="palace-row"><div class="locus">${i + 1}. ${esc(m.loci[i])}</div><div><strong>${esc(it)}</strong><textarea rows="2" data-img="${i}">${esc(m.images[i])}</textarea></div></div>`).join("")}
+      <div class="row" style="margin-top:10px"><button class="primary" id="msave">Save it</button>${aiOn() ? `<button id="mai">🤖 Make the images and sentence better with ${esc(aiName())}</button>` : ""}<button id="mshuffle">New images</button></div><div id="maimsg"></div></div>`;
+  const grab = () => { m.sentence = $("#msent").value.trim(); m.images = $$("[data-img]").map((t) => t.value.trim()); };
+  $("#mshuffle").onclick = () => { grab(); m.images = makeImages(m.items, m.loci); memDraft(m); };
+  $("#msave").onclick = async () => { grab(); const list = ((await getStore("memory")) || []).filter((x) => x.id !== m.id); await putStore("memory", [...list, m]); go(`#/memory/${m.id}`); };
+  if ($("#mai")) $("#mai").onclick = async () => {
+    grab(); $("#mai").disabled = true; $("#maimsg").innerHTML = '<p class="muted">Thinking up something memorable…</p>';
+    try {
+      const r = await aiCall(AI_SYSTEM + " You make memorable, funny, school-appropriate mnemonics and memory-palace images for a teenager.",
+        `List to remember, in order:\n${m.items.map((x, i) => `${i + 1}. ${x} (place: ${m.loci[i]})`).join("\n")}\n\nThe first letters are ${m.acronym}. Write a short, funny sentence whose words start with those letters in order, and for each item a vivid one-sentence image at its place that clearly links to the item's meaning (not just its sound).`,
+        { type: "object", additionalProperties: false, required: ["sentence", "images"], properties: { sentence: { type: "string" }, images: { type: "array", items: { type: "string" } } } });
+      if (r.sentence) m.sentence = r.sentence;
+      if (r.images?.length === m.items.length) m.images = r.images;
+      memDraft(m);
+    } catch (e) { $("#maimsg").innerHTML = `<p class="bad">${esc(e.message)}</p>`; $("#mai").disabled = false; }
+  };
+  $("#mout").scrollIntoView({ behavior: "smooth" });
+}
+function memView(m) {
+  view(`<p><a href="#/memory">← Memory maker</a></p><h1>🏰 ${esc(m.title)}</h1>
+    <div class="card"><p class="big-mnemo">${esc(m.acronym)}</p><p><em>${esc(m.sentence)}</em></p></div>
+    <div class="card"><h2>Walk through your palace</h2><p class="small muted">Close your eyes at each place and see the scene before you read the item.</p>
+      ${m.items.map((it, i) => `<div class="palace-row"><div class="locus">${i + 1}. ${esc(m.loci[i])}</div><div><strong>${esc(it)}</strong><div class="small">${esc(m.images[i])}</div></div></div>`).join("")}</div>
+    <div class="row"><a class="btn primary" href="#/memory/${m.id}/test">Test me</a><button id="medit">Edit</button><button id="mdel">Delete</button></div>`);
+  $("#medit").onclick = () => { memEditor(); $("#mt").value = m.title; $("#mi").value = m.items.join("\n"); memDraft(m); };
+  $("#mdel").onclick = async () => { if (!confirm("Delete this memory set?")) return; await putStore("memory", ((await getStore("memory")) || []).filter((x) => x.id !== m.id)); go("#/memory"); };
+}
+function memTest(m) {
+  let i = 0, right = 0;
+  const step = () => {
+    if (i >= m.items.length) return finish();
+    view(`<p><a href="#/memory/${m.id}">← ${esc(m.title)}</a></p><h1>🏰 Test: ${esc(m.title)}</h1>
+      <div class="card"><div class="small muted">Place ${i + 1} of ${m.items.length}</div><h2>You're at: ${esc(m.loci[i])}</h2>
+        <p>What's here? Picture the scene, then type the item.</p><input id="mans" autocomplete="off" placeholder="Type what you remember…">
+        <div class="row" style="margin-top:8px"><button class="primary" id="mchk">Check</button><span class="small muted">Hint: it starts with "${esc(firstLetter(m.items[i]).toUpperCase())}" (${esc(m.acronym)})</span></div><div id="mfb"></div></div>`);
+    $("#mans").focus();
+    const check = () => {
+      const typed = $("#mans").value, it = m.items[i];
+      const core = it.replace(/^\d{3,4}s?\s*[-–:]\s*/, "");
+      const ok = !!normAns(typed) && (normAns(typed) === normAns(it) || typedScore(core, typed) >= 0.6 || typedScore(it, typed) >= 0.6);
+      if (ok) right++;
+      $("#mchk").disabled = true; $("#mans").readOnly = true;
+      $("#mfb").innerHTML = `<div class="explain">${ok ? "✅" : "❌"} <strong>${esc(it)}</strong><div class="small">${esc(m.images[i])}</div>
+        ${ok ? "" : '<div class="row" style="margin-top:6px"><button id="mown">I had it right</button></div>'}</div><button class="primary" id="mnext" style="margin-top:8px">${i + 1 < m.items.length ? "Next place" : "Finish"}</button>`;
+      if ($("#mown")) $("#mown").onclick = () => { right++; $("#mown").replaceWith("Counted."); };
+      $("#mnext").onclick = () => { i++; step(); };
+      $("#mnext").focus();
+    };
+    $("#mchk").onclick = check;
+    $("#mans").onkeydown = (e) => { if (e.key === "Enter" && !$("#mchk").disabled) check(); };
+  };
+  const finish = async () => {
+    const score = right / m.items.length, list = (await getStore("memory")) || [];
+    await putStore("memory", list.map((x) => x.id === m.id ? { ...x, tests: [...(x.tests || []), { when: Date.now(), score }].slice(-20) } : x));
+    view(`<p><a href="#/memory">← Memory maker</a></p><h1>🏰 ${esc(m.title)}</h1><div class="card center"><h2>${right} of ${m.items.length} remembered</h2>
+      <p>${score === 1 ? "Perfect. Test yourself again tomorrow, then in a few days, to make it stick for good." : "Look at the scenes you missed again and make them even sillier, then test again tomorrow."}</p>
+      <div class="row" style="justify-content:center"><a class="btn" href="#/memory/${m.id}">Study it again</a><a class="btn primary" href="#/memory/${m.id}/test" onclick="setTimeout(route)">Test again</a></div></div>`);
+  };
+  step();
+}
+
 // ------------------------------------------------------------------ home page extras
 async function homeExtra(cardsDue) {
   const el = $("#homeextra");
   if (!el) return;
   try {
-    const [qd, log, cfg] = await Promise.all([quizDueCount(), getStore("daily"), ensurePlan()]);
+    const [qd, log, cfg, mlog] = await Promise.all([quizDueCount(), getStore("daily"), ensurePlan(), getStore("mistakes")]);
+    const mistakesOpen = (mlog || []).filter((m) => !m.fixed).length;
     const today = dayKey(), plan = (cfg.sched || []).find(([k]) => k === today), done = await planDoneCheck();
     const daily = (log || {})[today];
     const items = plan ? (await Promise.all(plan[1].map((it) => planItemHtml(it, done(it, today), false)))).join("") : "";
@@ -2909,7 +3630,9 @@ async function homeExtra(cardsDue) {
       <a class="card" style="text-decoration:none;color:inherit" href="#/review"><div style="font-size:1.6rem">📅</div><strong>Due for review</strong>
         <div class="small muted">${qd || cardsDue ? `${qd ? `${qd} quiz question${qd === 1 ? "" : "s"}` : ""}${qd && cardsDue ? " and " : ""}${cardsDue ? `${cardsDue} flashcard${cardsDue === 1 ? "" : "s"}` : ""}` : "Nothing due right now"}</div></a>
       <a class="card" style="text-decoration:none;color:inherit" href="#/progress"><div style="font-size:1.6rem">📈</div><strong>Predicted grades</strong>
-        <div class="small muted">And the topics holding each one back</div></a></div>
+        <div class="small muted">And the topics holding each one back</div></a>
+      <a class="card" style="text-decoration:none;color:inherit" href="#/mistakes"><div style="font-size:1.6rem">📓</div><strong>Mistake log</strong>
+        <div class="small muted">${mistakesOpen ? `${mistakesOpen} to fix` : "Nothing to fix right now"}</div></a></div>
       <div class="card" style="margin-top:14px"><div class="row spread"><h2 style="margin:0">🗓️ Today's plan</h2><a href="#/plan">Full timetable →</a></div>
         ${items || '<p class="muted">Nothing planned today. Enjoy the day off, or do a daily review.</p>'}</div>`;
   } catch { /* the rest of the home page still works */ }
